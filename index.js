@@ -21,19 +21,25 @@ var commands = {
 		if (participants.some((p) => p.id === msg.author.id))
 			return msg.reply(`you're already added! ${participants.length}/12`);
 
-		if (participants.length >= 12)
-			return msg.reply(`sorry, mate, it's full! 12/12`);
+		// unreachable in the current implementation
+		// if (participants.length >= 12)
+		//     return msg.reply(`sorry, mate, it's full! 12/12`);
 
 		participants.push(msg.author);
 		msg.reply(`added! ${participants.length}/12`);
 
 		if (participants.length >= 12)
 		{
+			var mentions = "";
+			participants.forEach((p) => mentions += `<@${p.id}> `);
+
 			var cap1 = participants[randomInt(0, 11)];
 			participants = participants.filter((p) => p.id !== cap1.id);
 			var cap2 = participants[randomInt(0, 10)];
 
-			msg.channel.sendMessage(`@everyone PUG is starting! Your captains are <@${cap1.id}> and <@${cap2.id}>!`);
+			msg.channel.sendMessage("PUG is starting!");
+			msg.channel.sendMessage(mentions);
+			msg.channel.sendMessage(`Your captains are <@${cap1.id}> and <@${cap2.id}>!`);
 			participants = [];
 		}
 	},
@@ -50,10 +56,7 @@ var commands = {
 			return msg.reply("noone's signed up! 0/12");
 		}
 		var response = "participants are: ";
-		for (var i = 0; i < participants.length; i++)
-		{
-			response += participants[i].username + ", ";
-		}
+		participants.forEach((p) => response += `${p.username}, `;);
 		response = response.substring(0, response.length - 2);
 		msg.reply(`${response}. ${participants.length}/12`);
 	},
