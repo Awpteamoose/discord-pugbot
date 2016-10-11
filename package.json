@@ -1,0 +1,15 @@
+{
+  "name": "PUGBOT",
+  "description": "Make dem pugs yo.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Awpteamoose"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^9.3.0"
+  }
+}

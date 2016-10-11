@@ -1,0 +1,13 @@
+{
+	"discord": {
+		"bot_token": "",
+		"client_id": "",
+		"client_secret": ""
+	},
+	"database": {
+		"host": "127.0.0.1",
+		"database": "",
+		"user": "",
+		"password": ""
+	}
+}
