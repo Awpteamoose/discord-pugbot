@@ -56,7 +56,7 @@ var commands = {
 			return msg.reply("noone's signed up! 0/12");
 		}
 		var response = "participants are: ";
-		participants.forEach((p) => response += `${p.username}, `;);
+		participants.forEach((p) => response += `${p.username}, `);
 		response = response.substring(0, response.length - 2);
 		msg.reply(`${response}. ${participants.length}/12`);
 	},
