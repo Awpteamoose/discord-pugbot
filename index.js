@@ -31,15 +31,17 @@ var commands = {
 		if (participants.length >= 12)
 		{
 			var mentions = "";
-			participants.forEach((p) => mentions += `<@${p.id}> `);
+			participants.forEach((p, i) => mentions += `${i+1}. <@${p.id}>\n`);
 
 			var cap1 = participants[randomInt(0, 11)];
 			participants = participants.filter((p) => p.id !== cap1.id);
 			var cap2 = participants[randomInt(0, 10)];
+			participants = participants.filter((p) => p.id !== cap2.id);
+			// participants now - players available for picking
 
-			msg.channel.sendMessage("PUG is starting!");
+			msg.channel.sendMessage("PUG is starting! Captains pick 1-2-2-2-2-1");
 			msg.channel.sendMessage(mentions);
-			msg.channel.sendMessage(`Your captains are <@${cap1.id}> and <@${cap2.id}>!`);
+			msg.channel.sendMessage(`Your captains are <@${cap1.id}> (picks first, Team 1) and <@${cap2.id}>!`);
 			participants = [];
 		}
 	},
