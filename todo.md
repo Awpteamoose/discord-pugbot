@@ -4,4 +4,5 @@
 	2. Captain types like "!pick 4"
 	3. Repeat, but there's less players now
 3. Post who's making the lobby
-4. Map veto?
+4. Numerical status (like x/12) in PUGBOT's name?
+5. Map veto?
