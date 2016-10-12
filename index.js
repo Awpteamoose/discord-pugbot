@@ -39,8 +39,12 @@ commands.add = (msg) => {
 		participants = participants.filter((p) => p.id !== cap2.id);
 		// participants now - players available for picking
 
-		msg.channel.sendMessage("PUG is starting! Captains pick 1-2-2-2-2-1\n" + mentions);
-		msg.channel.sendMessage(`Your captains are <@${cap1.id}> (picks first, Team 1) and <@${cap2.id}>!`);
+		msg.channel.sendMessage(
+			`PUG is starting!\n` +
+			`${mentions}\n` +
+			`Captains are <@${cap1.id}> (picks first, Team 1) and <@${cap2.id}> (picks second, Team 2)\n` +
+			`Pick order is 1-2-2-2-2-1\n`
+		);
 		participants = [];
 	}
 };
@@ -68,7 +72,7 @@ commands.help = (msg) => {
 
 client.on('message', msg => {
 	if (msg.content[0] !== "!") return; // not a command
-	msg.content = msg.content.substring(1); // strip away the !
+	msg.content = msg.content.substring(1); // strip away the '!'
 
 	if (commands[msg.content])
 		commands[msg.content](msg);
