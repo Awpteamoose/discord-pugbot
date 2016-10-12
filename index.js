@@ -41,7 +41,7 @@ commands.add = (msg) => {
 	if (participants.length >= 12)
 	{
 		var mentions = "1 minute to !ready\n";
-		participants.forEach((p, i) => mentions += `<@${p.id}> `);
+		participants.forEach((p, i) => mentions += `${p} `);
 		msg.channel.sendMessage(mentions);
 		ready_up = true;
 
@@ -75,7 +75,7 @@ commands.ready = (msg) => {
 
 	if (ready.length !== 12) return;
 	var mentions = "";
-	participants.forEach((p, i) => mentions += `${i+1}. <@${p.id}>\n`);
+	participants.forEach((p, i) => mentions += `${i+1}. ${p}\n`);
 
 	var cap1 = participants[randomInt(0, 11)];
 	participants = participants.filter((p) => p.id !== cap1.id);
@@ -86,7 +86,7 @@ commands.ready = (msg) => {
 	msg.channel.sendMessage(
 		`PUG is starting!\n` +
 		`${mentions}\n` +
-		`Captains are <@${cap1.id}> (picks first, Team 1) and <@${cap2.id}> (picks second, Team 2)\n` +
+		`Captains are ${cap1} (picks first, Team 1) and ${cap2} (picks second, Team 2)\n` +
 		`Pick order is 1-2-2-2-2-1\n`
 	);
 
@@ -129,6 +129,12 @@ commands.mock = (msg, args) => {
 	if (commands[args[2]])
 		commands[args[2]](msg, args.slice(2));
 };
+// Aliases
+commands.join = commands.add;
+commands.leave = commands.remove;
+commands.r = commands.ready;
+commands.m = commands.mock;
+commands.info = commands.help;
 
 client.on('message', msg => {
 	if (msg.content[0] !== "!") return; // not a command
