@@ -1,8 +1,8 @@
 "use strict";
 function randomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min)) + min;
 };
 
 // TODO: use collection.find
@@ -113,9 +113,9 @@ client.on("ready", () => {
 	commands.remove = (msg) => {
 		if (msg.channel.name !== "lfg") return;
 		if (ready_up) return;
+
 		if (!hasUser(participants, msg.author))
 			return msg.reply(`you're not added! ${participants.length}/12`);
-
 		participants = participants.filter((p) => p.id !== msg.author.id);
 		msg.reply(`removed! ${participants.length}/12`);
 		icon_status();
@@ -130,10 +130,10 @@ client.on("ready", () => {
 		msg.reply(`${response}. ${participants.length}/12`);
 	};
 	commands.help = (msg) => {
-		msg.reply(`available commands: !help, !status, !add (only #lfg), !remove (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains. More advanced features coming soon.`);
+		return msg.reply(`available commands: !help, !status, !add (only #lfg), !remove (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains. More advanced features coming soon.`);
 	};
 	commands.mock = (msg, args) => {
-		return; // comment to enable dev mode
+		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
 		var id = args[1];
 		msg.author = {
 			"id": id,
@@ -141,6 +141,15 @@ client.on("ready", () => {
 			"toString": () => `<@${id}>`
 		};
 
+		if (commands[args[2]])
+			commands[args[2]](msg, args.slice(2));
+	};
+	commands.force = (msg, args) => {
+		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+		var id = msg.content.match(/(?:<@)(\d+)(?:>)/)[1];
+		var subject = guild.member(id).user;
+
+		msg.author = subject;
 		if (commands[args[2]])
 			commands[args[2]](msg, args.slice(2));
 	};

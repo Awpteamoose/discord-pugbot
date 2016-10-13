@@ -3,3 +3,4 @@
 	2. Captain types like "!pick 4"
 	3. Repeat, but there's less players now
 2. Map veto?
+3. Make the code nicer
