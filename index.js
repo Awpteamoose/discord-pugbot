@@ -12,13 +12,18 @@ function hasUser(array, user2) {
 };
 
 var config = require('./config.json');
+var fs = require('fs');
 var Discord = require('discord.js');
 var client = new Discord.Client();
+
+var icons = [];
+for (var i = 0; i <= 12; i++)
+	icons.push(fs.readFileSync(`./icons/${i}.png`));
 
 client.on("ready", () => {
 	console.log("Ready to begin! Serving in " + client.channels.array().length + " channels");
 
-	// TODO: spin this for every server so the bot can be used on multiple servers
+	// TODO: spin this for every guild so the bot can be used on multiple guilds with only one instance
 	var guild = client.guilds.first();
 	var member = guild.member(client.user);
 
@@ -27,8 +32,9 @@ client.on("ready", () => {
 	var ready = [];
 	var ready_timeout;
 
-	var name_status = () => member.setNickname(`PUGBOT ${participants.length}/12`);
-	name_status();
+	// var name_status = () => member.setNickname(`PUGBOT ${participants.length}/12`);
+	var icon_status = () => guild.setIcon(icons[participants.length]);
+	icon_status();
 
 	var commands = {};
 	commands.add = (msg) => {
@@ -40,7 +46,7 @@ client.on("ready", () => {
 
 		participants.push(msg.author);
 		msg.reply(`added! ${participants.length}/12`);
-		name_status();
+		icon_status();
 
 		if (participants.length >= 12)
 		{
@@ -59,12 +65,13 @@ client.on("ready", () => {
 
 				// Reset, but keep the ready ones in
 				participants = ready;
-				name_status();
+				icon_status();
 				ready = [];
 				ready_up = false;
 			}, 1000 * 60);
 		};
 	};
+	// TODO: some form of !unready?
 	commands.ready = (msg) => {
 		if (msg.channel.name !== "lfg") return;
 		if (!ready_up) return;
@@ -86,6 +93,7 @@ client.on("ready", () => {
 		participants = participants.filter((p) => p.id !== cap1.id);
 		var cap2 = participants[randomInt(0, 10)];
 		participants = participants.filter((p) => p.id !== cap2.id);
+		// TODO: pick phase
 		// participants now - players available for picking
 
 		msg.channel.sendMessage(
@@ -97,11 +105,11 @@ client.on("ready", () => {
 
 		// Reset
 		participants = [];
-		name_status();
+		icon_status();
 		ready = [];
 		ready_up = false;
 		clearTimeout(ready_timeout);
-	}
+	};
 	commands.remove = (msg) => {
 		if (msg.channel.name !== "lfg") return;
 		if (ready_up) return;
@@ -110,12 +118,12 @@ client.on("ready", () => {
 
 		participants = participants.filter((p) => p.id !== msg.author.id);
 		msg.reply(`removed! ${participants.length}/12`);
-		name_status();
+		icon_status();
 	};
 	commands.status = (msg) => {
-		if (participants.length == 0) {
+		if (participants.length == 0)
 			return msg.reply("noone's signed up! 0/12");
-		}
+
 		var response = "participants are: ";
 		participants.forEach((p) => response += `${p.username}, `);
 		response = response.substring(0, response.length - 2);
