@@ -83,7 +83,7 @@ client.on("ready", () => {
 				var unready = [];
 				unready = participants.filter((p) => !hasUser(ready, p));
 				var reply = `PUG is cancelled, only ${ready.length}/12 readied up!\nUnready removed: `;
-				unready.forEach((p) => reply += `${nickname(p)}, `);
+				unready.forEach((p) => reply += `${p}, `);
 				reply = reply.substring(0, reply.length - 2);
 				msg.channel.sendMessage(reply);
 
@@ -132,6 +132,7 @@ client.on("ready", () => {
 		turn = 0;
 		teams = [[captains[0]], [captains[1]]];
 		clearTimeout(readyTimeout);
+		phase = phases.PICKING;
 
 		picksTimeout = setTimeout(() => {
 			msg.channel.sendMessage(`PUG is cancelled, the pick phase is taking too long for some reason.`);
@@ -156,10 +157,11 @@ client.on("ready", () => {
 		if (participants.length === 1)
 		{
 			teams[turn].push(participants[0]);
-			var results = `\nTeam 1:\n`;
+			var results = `:ok: \nTeam 1:\n`;
 			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
 			results += `\nTeam 2:\n`;
 			teams[1].forEach((p, i) => results += `${i+1}. ${p}\n`);
+			results += `\nLET'S FUCKING GO! WOOOOO!\n`;
 			msg.channel.sendMessage(results);
 			clearTimeout(picksTimeout);
 			return reset();
@@ -196,7 +198,13 @@ client.on("ready", () => {
 			unready.forEach((p) => reply += `${p}, `);
 			reply = reply.substring(0, reply.length - 2);
 			msg.reply(reply);
-		}
+		} else if (phase === phases.PICKING) {
+			var msgTeams = `${msg.author},\nCurrently picked for Team 1:\n`;
+			teams[0].forEach((p, i) => msgTeams += `${i+1}. ${p}\n`);
+			msgTeams += `\nCurrently picked for Team 2:\n`;
+			teams[1].forEach((p, i) => msgTeams += `${i+1}. ${p}\n`);
+			msg.channel.sendMessage(msgTeams);
+		};
 	};
 	commands.help = (msg) => {
 		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
