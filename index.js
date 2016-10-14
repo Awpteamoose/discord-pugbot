@@ -20,6 +20,12 @@ var icons = [];
 for (var i = 0; i <= 12; i++)
 	icons.push(fs.readFileSync(`./icons/${i}.png`));
 
+var phases = {
+	"GATHER": 0,
+	"READY_UP": 1,
+	"PICKING": 2
+}
+
 client.on("ready", () => {
 	console.log("Ready to begin! Serving in " + client.channels.array().length + " channels");
 
@@ -27,54 +33,70 @@ client.on("ready", () => {
 	var guild = client.guilds.first();
 	var member = guild.member(client.user);
 
-	var participants = [];
-	var ready_up = false;
-	var ready = [];
-	var ready_timeout;
+	var participants;
+	var phase;
+	var ready;
+	var readyTimeout;
+	var captains;
+	var teams;
+	var picksRemaining;
+	var turn;
+	var picksTimeout;
 
-	// var name_status = () => member.setNickname(`PUGBOT ${participants.length}/12`);
-	var icon_status = () => guild.setIcon(icons[participants.length]);
-	icon_status();
+	var iconStatus = () => guild.setIcon(icons[participants.length]);
+
+	function nickname(user) {
+		var guildMember = guild.member(user);
+		if (!guildMember || !guildMember.nickname) return user.username;
+		return guildMember.nickname;
+	}
+
+	function reset() {
+		participants = [];
+		phase = phases.GATHER;
+		clearTimeout(readyTimeout);
+		clearTimeout(picksTimeout);
+		iconStatus();
+	};
+	reset();
 
 	var commands = {};
 	commands.add = (msg) => {
 		if (msg.channel.name !== "lfg") return;
-		if (ready_up)
-			return msg.reply(`PUG ready-up is in progress`);
+		if (phase !== phases.GATHER)
+			return msg.reply(`PUG in progress!`);
 		if (hasUser(participants, msg.author))
 			return msg.reply(`you're already added! ${participants.length}/12`);
 
 		participants.push(msg.author);
 		msg.reply(`added! ${participants.length}/12`);
-		icon_status();
+		iconStatus();
 
-		if (participants.length >= 12)
-		{
-			var mentions = "1 minute to !ready\n";
+		if (participants.length >= 12) {
+			var mentions = "1 minute to \`!ready\`\n";
 			participants.forEach((p, i) => mentions += `${p} `);
 			msg.channel.sendMessage(mentions);
-			ready_up = true;
+			phase = phases.READY_UP;
+			ready = [];
 
-			ready_timeout = setTimeout(() => {
+			readyTimeout = setTimeout(() => {
 				var unready = [];
 				unready = participants.filter((p) => !hasUser(ready, p));
 				var reply = `PUG is cancelled, only ${ready.length}/12 readied up!\nUnready removed: `;
-				unready.forEach((p) => reply += `${p.username}, `);
+				unready.forEach((p) => reply += `${nickname(p)}, `);
 				reply = reply.substring(0, reply.length - 2);
 				msg.channel.sendMessage(reply);
 
 				// Reset, but keep the ready ones in
 				participants = ready;
-				icon_status();
-				ready = [];
-				ready_up = false;
+				reset();
 			}, 1000 * 60);
 		};
 	};
 	// TODO: some form of !unready?
 	commands.ready = (msg) => {
 		if (msg.channel.name !== "lfg") return;
-		if (!ready_up) return;
+		if (phase !== phases.READY_UP) return;
 
 		if (hasUser(ready, msg.author))
 			return msg.reply(`you've already readied up! ${ready.length}/12`);
@@ -86,51 +108,97 @@ client.on("ready", () => {
 		msg.reply(`you're ready! ${ready.length}/12`);
 
 		if (ready.length !== 12) return;
+
+		captains = [];
+		captains[0] = participants[randomInt(0, 11)];
+		participants = participants.filter((p) => p.id !== captains[0].id);
+		captains[1] = participants[randomInt(0, 10)];
+		participants = participants.filter((p) => p.id !== captains[1].id);
+		// participants now - players available for picking
+
 		var mentions = "";
 		participants.forEach((p, i) => mentions += `${i+1}. ${p}\n`);
-
-		var cap1 = participants[randomInt(0, 11)];
-		participants = participants.filter((p) => p.id !== cap1.id);
-		var cap2 = participants[randomInt(0, 10)];
-		participants = participants.filter((p) => p.id !== cap2.id);
-		// TODO: pick phase
-		// participants now - players available for picking
 
 		msg.channel.sendMessage(
 			`PUG is starting!\n` +
 			`${mentions}\n` +
-			`Captains are ${cap1} (picks first, Team 1) and ${cap2} (picks second, Team 2)\n` +
+			`Captains are ${captains[0]} (picks first, Team 1) and ${captains[1]} (picks second, Team 2)\n` +
+			`\`!pick X\` to pick player number X\n` +
 			`Pick order is 1-2-2-2-2-1\n`
 		);
 
-		// Reset
-		participants = [];
-		icon_status();
-		ready = [];
-		ready_up = false;
-		clearTimeout(ready_timeout);
+		picksRemaining = 1;
+		turn = 0;
+		teams = [[captains[0]], [captains[1]]];
+		clearTimeout(readyTimeout);
+
+		picksTimeout = setTimeout(() => {
+			msg.channel.sendMessage(`PUG is cancelled, the pick phase is taking too long for some reason.`);
+			reset();
+		}, 1000 * 60 * 5);
+	};
+	commands.pick = (msg, args) => {
+		if (msg.author.id !== captains[turn].id) return;
+		if (isNaN(args[1])) return msg.reply(`not a number!`);
+		var number = parseInt(args[1] - 1);
+		if (number < 0 || number >= participants.length) return msg.reply(`there is no such player!`);
+		var picked = participants[number];
+		teams[turn].push(picked);
+		participants = participants.filter((p) => p.id !== picked.id);
+		picksRemaining--;
+
+		if (picksRemaining === 0) {
+			picksRemaining = 2;
+			turn = turn === 0 ? 1 : 0;
+		}
+
+		if (participants.length === 1)
+		{
+			teams[turn].push(participants[0]);
+			var results = `\nTeam 1:\n`;
+			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
+			results += `\nTeam 2:\n`;
+			teams[1].forEach((p, i) => results += `${i+1}. ${p}\n`);
+			msg.channel.sendMessage(results);
+			clearTimeout(picksTimeout);
+			return reset();
+		}
+
+		var response = `${captains[turn]}, ${picksRemaining} pick${picksRemaining === 2 ? 's':''}\n`;
+		participants.forEach((p, i) => response += `${i+1}. ${p}\n`);
+		msg.channel.sendMessage(response);
 	};
 	commands.remove = (msg) => {
 		if (msg.channel.name !== "lfg") return;
-		if (ready_up) return;
+		if (phase !== phases.GATHER) return;
 
 		if (!hasUser(participants, msg.author))
 			return msg.reply(`you're not added! ${participants.length}/12`);
 		participants = participants.filter((p) => p.id !== msg.author.id);
 		msg.reply(`removed! ${participants.length}/12`);
-		icon_status();
+		iconStatus();
 	};
+	// In READY_UP show who's not ready, in PICKING show who's captains, whose turn and who's available
 	commands.status = (msg) => {
-		if (participants.length == 0)
-			return msg.reply("noone's signed up! 0/12");
+		if (phase === phases.GATHER) {
+			if (participants.length == 0)
+				return msg.reply("noone's signed up! 0/12");
 
-		var response = "participants are: ";
-		participants.forEach((p) => response += `${p.username}, `);
-		response = response.substring(0, response.length - 2);
-		msg.reply(`${response}. ${participants.length}/12`);
+			var response = "participants are: ";
+			participants.forEach((p) => response += `${nickname(p)}, `);
+			response = response.substring(0, response.length - 2);
+			msg.reply(`${response}. ${participants.length}/12`);
+		} else if (phase === phases.READY_UP) {
+			var unready = [];
+			unready = participants.filter((p) => !hasUser(ready, p));
+			var reply = `Unready: `;
+			unready.forEach((p) => reply += `${p}, `);
+			reply = reply.substring(0, reply.length - 2);
+			msg.reply(reply);
+		}
 	};
 	commands.help = (msg) => {
-		return msg.reply(`available commands: !help, !status, !add (only #lfg), !remove (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains. More advanced features coming soon.`);
+		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
 	};
 	commands.mock = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
@@ -146,13 +214,32 @@ client.on("ready", () => {
 	};
 	commands.force = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
-		var id = msg.content.match(/(?:<@)(\d+)(?:>)/)[1];
+		var id = msg.content.match(/(?:<@|<@!)(\d+)(?:>)/);
+		if (!id) return;
+		id = id[1];
 		var subject = guild.member(id).user;
 
 		msg.author = subject;
 		if (commands[args[2]])
 			commands[args[2]](msg, args.slice(2));
 	};
+	commands.reset = (msg) => {
+		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+		reset();
+		msg.reply("PUGBOT reset!");
+	};
+	commands.mocks = (msg, args) => {
+		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+		var me = msg.author;
+		for (var i = 1; i <= 12; i ++) {
+			var mockArgs = ["mock", i.toString(), args[1]];
+			msg.author = me;
+			commands.mock(msg, mockArgs);
+		};
+	};
+	commands.nicekyle = (msg) => {
+		msg.channel.sendTTSMessage(`nice Kyle!`);
+	}
 	// Aliases
 	commands.join = commands.add;
 	commands.leave = commands.remove;
