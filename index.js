@@ -88,8 +88,9 @@ client.on("ready", () => {
 				msg.channel.sendMessage(reply);
 
 				// Reset, but keep the ready ones in
-				participants = ready;
 				reset();
+				participants = ready;
+				iconStatus();
 			}, 1000 * 60);
 		};
 	};
