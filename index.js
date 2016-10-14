@@ -237,9 +237,6 @@ client.on("ready", () => {
 			commands.mock(msg, mockArgs);
 		};
 	};
-	commands.nicekyle = (msg) => {
-		msg.channel.sendTTSMessage(`nice Kyle!`);
-	}
 	// Aliases
 	commands.join = commands.add;
 	commands.leave = commands.remove;
