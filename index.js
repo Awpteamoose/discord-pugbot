@@ -20,6 +20,9 @@ var icons = [];
 for (var i = 0; i <= 12; i++)
 	icons.push(fs.readFileSync(`./icons/${i}.png`));
 
+var playerDB = new require('./sqlite3-promises.js').make();
+playerDB.open('players.sqlite3');
+
 var phases = {
 	"GATHER": 0,
 	"READY_UP": 1,
@@ -181,7 +184,6 @@ client.on("ready", () => {
 		msg.reply(`removed! ${participants.length}/12`);
 		iconStatus();
 	};
-	// In READY_UP show who's not ready, in PICKING show who's captains, whose turn and who's available
 	commands.status = (msg) => {
 		if (phase === phases.GATHER) {
 			if (participants.length == 0)
@@ -207,7 +209,7 @@ client.on("ready", () => {
 		};
 	};
 	commands.help = (msg) => {
-		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg). Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
+		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg), \`!me <info>\`, \`!who <@mention>\`. Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
 	};
 	commands.mock = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
@@ -245,6 +247,21 @@ client.on("ready", () => {
 			msg.author = me;
 			commands.mock(msg, mockArgs);
 		};
+	};
+	commands.me = (msg, args) => {
+		if (!playerDB.ready) return;
+		var info = args.slice(1).join(" ").replace(/\'/g,'\'\'');
+		playerDB.run(`INSERT OR REPLACE INTO players VALUES ('${msg.author.id}', '${info}')`);
+		msg.reply("gotcha!");
+	};
+	commands.who = (msg, args) => {
+		if (!playerDB.ready) return;
+		var id = args[1].match(/(?:<@|<@!)(\d+)(?:>)/);
+		if (!id) return;
+		id = id[1];
+		playerDB
+			.all(`SELECT info FROM players WHERE id='${id}'`)
+			.then((rows) => rows[0] ? msg.reply(`${nickname(guild.member(id).user)} is ${rows[0].info}`) : `nothing on this player yet!`);
 	};
 	// Aliases
 	commands.join = commands.add;
