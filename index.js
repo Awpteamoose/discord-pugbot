@@ -261,7 +261,7 @@ client.on("ready", () => {
 		id = id[1];
 		playerDB
 			.all(`SELECT info FROM players WHERE id='${id}'`)
-			.then((rows) => rows[0] ? msg.reply(`${nickname(guild.member(id).user)} is ${rows[0].info}`) : `nothing on this player yet!`);
+			.then((rows) => msg.reply(rows[0] ? `${nickname(guild.member(id).user)} is ${rows[0].info}` : `nothing on this player yet!`));
 	};
 	// Aliases
 	commands.join = commands.add;
