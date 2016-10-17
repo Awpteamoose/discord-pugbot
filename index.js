@@ -21,7 +21,7 @@ for (var i = 0; i <= 12; i++)
 	icons.push(fs.readFileSync(`./icons/${i}.png`));
 
 var playerDB = new require('./sqlite3-promises.js').make();
-playerDB.open('players.sqlite3');
+playerDB.open('players.sqlite3').then(() => playerDB.run(`CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY NOT NULL, info TEXT NOT NULL)`));
 
 var phases = {
 	"GATHER": 0,
@@ -256,7 +256,7 @@ client.on("ready", () => {
 	};
 	commands.who = (msg, args) => {
 		if (!playerDB.ready) return;
-		var id = args[1].match(/(?:<@|<@!)(\d+)(?:>)/);
+		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
 		if (!id) return;
 		id = id[1];
 		playerDB
