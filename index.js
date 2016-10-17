@@ -252,6 +252,7 @@ client.on("ready", () => {
 	commands.r = commands.ready;
 	commands.m = commands.mock;
 	commands.info = commands.help;
+	commands.p = commands.pick;
 
 	client.on('message', msg => {
 		if (msg.content[0] !== "!") return; // not a command
