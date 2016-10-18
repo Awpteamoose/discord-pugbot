@@ -18,6 +18,14 @@ exports.make = function() {
 			});
 		});
 	};
+	this.get = (command) => {
+		return new Promise((resolve, reject) => {
+			db.get(command, (err, row) => {
+				if (err !== null) return reject(err);
+				resolve(row);
+			});
+		});
+	};
 	this.all = (command) => {
 		return new Promise((resolve, reject) => {
 			db.all(command, (err, rows) => {
