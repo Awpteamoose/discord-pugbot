@@ -194,7 +194,7 @@ client.on("ready", () => {
 	};
 	commands.status = (msg) => {
 		if (phase === phases.GATHER) {
-			if (participants.length == 0)
+			if (participants.length === 0)
 				return msg.reply("noone's signed up! 0/12");
 
 			var response = "participants are: ";
