@@ -217,7 +217,7 @@ client.on("ready", () => {
 		};
 	};
 	commands.help = (msg) => {
-		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg), \`!me <info>\`, \`!who <@mention>\`. Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
+		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg), \`!me <info>\`, \`!who @mention\`, \`!fatkid @mention\`. Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
 	};
 	commands.mock = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
@@ -287,6 +287,7 @@ client.on("ready", () => {
 	commands.m = commands.mock;
 	commands.info = commands.help;
 	commands.p = commands.pick;
+	commands.fat = commands.fatkid;
 
 	client.on('message', msg => {
 		if (msg.content[0] !== "!") return; // not a command
