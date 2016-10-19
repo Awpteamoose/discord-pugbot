@@ -165,8 +165,11 @@ client.on("ready", () => {
 		if (participants.length === 1)
 		{
 			teams[turn].push(participants[0]);
-			if (playerDB.ready)
-				playerDB.run(`INSERT OR IGNORE INTO players (id) VALUES ('${msg.author.id}')`).then(() => playerDB.run(`UPDATE players SET fatkid=(fatkid + 1) WHERE id='${msg.author.id}'`));
+			if (playerDB.ready()) {
+				var id = participants[0].id;
+				playerDB.run(`INSERT OR IGNORE INTO players (id) VALUES ('${id}')`)
+				.then(() => playerDB.run(`UPDATE players SET fatkid=(fatkid + 1) WHERE id='${id}'`));
+			}
 
 			var results = `:ok: \nTeam 1:\n`;
 			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
@@ -257,13 +260,13 @@ client.on("ready", () => {
 		};
 	};
 	commands.me = (msg, args) => {
-		if (!playerDB.ready) return;
+		if (!playerDB.ready()) return;
 		var info = args.slice(1).join(" ").replace(/\'/g,'\'\'');
 		playerDB.run(`INSERT OR IGNORE INTO players (id) VALUES ('${msg.author.id}')`).then(() => playerDB.run(`UPDATE players SET info='${info}' WHERE id=${msg.author.id}`));
 		msg.reply("gotcha!");
 	};
 	commands.who = (msg, args) => {
-		if (!playerDB.ready) return;
+		if (!playerDB.ready()) return;
 		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
 		if (!id) return;
 		id = id[1];
@@ -272,7 +275,7 @@ client.on("ready", () => {
 			.then((rows) => msg.reply((rows[0] && rows[0].info) ? `${nickname(guild.member(id).user)} is ${rows[0].info}` : `nothing on this player yet!`));
 	};
 	commands.fatkid = (msg, args) => {
-		if (!playerDB.ready) return;
+		if (!playerDB.ready()) return;
 		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
 		if (!id) return;
 		id = id[1];
