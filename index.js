@@ -284,7 +284,7 @@ client.on("ready", () => {
 		id = id[1];
 		if (!DB.players[id] || !DB.players[id].info)
 			return msg.reply('nothing on this player yet!');
-		msg.reply(`${nickname(guild.member(id).user)} is ${DB.players[msg.author.id].info}`);
+		msg.reply(`${nickname(guild.member(id).user)} is ${DB.players[id].info}`);
 	};
 	commands.fatkid = (msg, args) => {
 		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
@@ -292,7 +292,7 @@ client.on("ready", () => {
 		id = id[1];
 		if (!DB.players[id] || !DB.players[id].fatkid)
 			return msg.reply("this player hasn't been a fat kid yet!");
-		msg.reply(`${nickname(guild.member(id).user)} has been the fat kid ${DB.players[msg.author.id].fatkid} times`);
+		msg.reply(`${nickname(guild.member(id).user)} has been the fat kid ${DB.players[id].fatkid} times`);
 	};
 	// Aliases
 	commands.join = commands.add;
