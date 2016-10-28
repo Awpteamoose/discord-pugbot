@@ -1,4 +1,4 @@
 config.json
 node_modules/
 npm-debug.log
-players.sqlite3
+DB.json

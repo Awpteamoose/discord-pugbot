@@ -11,22 +11,26 @@ function hasUser(array, user2) {
 	return array.some((user1) => user1.id === user2.id);
 };
 
-var config = require('./config.json');
 var fs = require('fs');
 var Discord = require('discord.js');
 var client = new Discord.Client();
 
+var config = require('./config.json');
+if (!fs.existsSync('./DB.json'))
+	fs.writeFileSync('./DB.json', '{}');
+var DB = require('./DB.json');
+function saveDB() {
+	fs.writeFileSync('./DB.json', JSON.stringify(DB));
+};
+
+if (!DB.players) {
+	DB.players = {};
+	saveDB();
+}
+
 var icons = [];
 for (var i = 0; i <= 12; i++)
 	icons.push(fs.readFileSync(`./icons/${i}.png`));
-
-var playerDB = new require('./sqlite3-promises.js').make();
-playerDB
-	.open('players.sqlite3')
-	.then(() => playerDB.run(`CREATE TABLE IF NOT EXISTS players (id TEXT PRIMARY KEY NOT NULL UNIQUE, info TEXT, fatkid INTEGER DEFAULT 0)`));
-	// .then(() => playerDB.get(`PRAGMA user_version`))
-	// .then((data) => { if (data.user_version < 1) playerDB.run(`ALTER TABLE players ADD COLUMN fatkid INTEGER DEFAULT 0; ALTER TABLE players`) })
-	// .then(() => playerDB.run(`PRAGMA user_version = 1`));
 
 var phases = {
 	"GATHER": 0,
@@ -165,11 +169,17 @@ client.on("ready", () => {
 		if (participants.length === 1)
 		{
 			teams[turn].push(participants[0]);
-			if (playerDB.ready()) {
-				var id = participants[0].id;
-				playerDB.run(`INSERT OR IGNORE INTO players (id) VALUES ('${id}')`)
-				.then(() => playerDB.run(`UPDATE players SET fatkid=(fatkid + 1) WHERE id='${id}'`));
-			}
+			var fatkid = participants[0].id
+
+			if (!DB.players[fatkid])
+				DB.players[fatkid] = {};
+
+			if (!DB.players[fatkid].fatkid)
+				DB.players[fatkid].fatkid = 1;
+			else
+				DB.players[fatkid].fatkid++;
+
+			saveDB();
 
 			var results = `:ok: \nTeam 1:\n`;
 			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
@@ -203,11 +213,12 @@ client.on("ready", () => {
 			var response = "participants are: ";
 			participants.forEach((p) => response += `${nickname(p)}, `);
 			response = response.substring(0, response.length - 2);
+			iconStatus();
 			msg.reply(`${response}. ${participants.length}/12`);
 		} else if (phase === phases.READY_UP) {
 			var unready = [];
 			unready = participants.filter((p) => !hasUser(ready, p));
-			var reply = `Unready: `;
+			var reply = `Type \`!ready\` to ready up!. Unready: `;
 			unready.forEach((p) => reply += `${p}, `);
 			reply = reply.substring(0, reply.length - 2);
 			msg.reply(reply);
@@ -260,28 +271,28 @@ client.on("ready", () => {
 		};
 	};
 	commands.me = (msg, args) => {
-		if (!playerDB.ready()) return;
 		var info = args.slice(1).join(" ").replace(/\'/g,'\'\'');
-		playerDB.run(`INSERT OR IGNORE INTO players (id) VALUES ('${msg.author.id}')`).then(() => playerDB.run(`UPDATE players SET info='${info}' WHERE id=${msg.author.id}`));
-		msg.reply("gotcha!");
+		if (!DB.players[msg.author.id])
+			DB.players[msg.author.id] = {};
+		DB.players[msg.author.id].info = info;
+		saveDB();
+		msg.reply('gotcha!');
 	};
 	commands.who = (msg, args) => {
-		if (!playerDB.ready()) return;
 		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
 		if (!id) return;
 		id = id[1];
-		playerDB
-			.all(`SELECT info FROM players WHERE id='${id}'`)
-			.then((rows) => msg.reply((rows[0] && rows[0].info) ? `${nickname(guild.member(id).user)} is ${rows[0].info}` : `nothing on this player yet!`));
+		if (!DB.players[id] || !DB.players[id].info)
+			return msg.reply('nothing on this player yet!');
+		msg.reply(`${nickname(guild.member(id).user)} is ${DB.players[msg.author.id].info}`);
 	};
 	commands.fatkid = (msg, args) => {
-		if (!playerDB.ready()) return;
 		var id = args[1] ? args[1].match(/(?:<@|<@!)(\d+)(?:>)/) : null;
 		if (!id) return;
 		id = id[1];
-		playerDB
-			.all(`SELECT fatkid FROM players WHERE id='${id}'`)
-			.then((rows) => msg.reply(rows[0] ? `${nickname(guild.member(id).user)} has been the fat kid ${rows[0].fatkid} times` : `this player hasn't been a fat kid yet!`));
+		if (!DB.players[id] || !DB.players[id].fatkid)
+			return msg.reply("this player hasn't been a fat kid yet!");
+		msg.reply(`${nickname(guild.member(id).user)} has been the fat kid ${DB.players[msg.author.id].fatkid} times`);
 	};
 	// Aliases
 	commands.join = commands.add;
