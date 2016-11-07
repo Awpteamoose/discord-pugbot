@@ -198,6 +198,10 @@ client.on("ready", () => {
 					DB.players[p.id].gamesPlayed++;
 			});
 
+			DB.lastPlayed = new Date().toISOString().
+				replace(/T/, ' ').   // replace T with a space
+				replace(/\..+/, ''); // delete the dot and everything after
+
 			saveDB();
 			return reset();
 		}
@@ -219,9 +223,9 @@ client.on("ready", () => {
 	commands.status = (msg) => {
 		if (phase === phases.GATHER) {
 			if (participants.length === 0)
-				return msg.reply("noone's signed up! 0/12");
+				return msg.reply(`Last PUG played: ${DB.lastPlayed}\nNoone's signed up! 0/12`);
 
-			var response = "participants are:\n";
+			var response = `Last PUG played: ${DB.lastPlayed}\nParticipants are:\n`;
 			participants.forEach((p) => response += `${nickname(p)}\n`);
 			response = response.substring(0, response.length - 2);
 			iconStatus();
