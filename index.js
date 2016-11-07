@@ -227,9 +227,8 @@ client.on("ready", () => {
 
 			var response = `Last PUG played: ${DB.lastPlayed || 'never'}\nParticipants are:\n`;
 			participants.forEach((p) => response += `${nickname(p)}\n`);
-			response = response.substring(0, response.length - 2);
 			iconStatus();
-			msg.reply(`${response}\n\n${participants.length}/12`);
+			msg.reply(`${response}\n${participants.length}/12`);
 		} else if (phase === phases.READY_UP) {
 			var unready = [];
 			unready = participants.filter((p) => !hasUser(ready, p));
