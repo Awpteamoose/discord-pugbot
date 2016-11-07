@@ -221,11 +221,11 @@ client.on("ready", () => {
 			if (participants.length === 0)
 				return msg.reply("noone's signed up! 0/12");
 
-			var response = "participants are: ";
-			participants.forEach((p) => response += `${nickname(p)}, `);
+			var response = "participants are:\n";
+			participants.forEach((p) => response += `${nickname(p)}\n`);
 			response = response.substring(0, response.length - 2);
 			iconStatus();
-			msg.reply(`${response}. ${participants.length}/12`);
+			msg.reply(`${response}\n\n${participants.length}/12`);
 		} else if (phase === phases.READY_UP) {
 			var unready = [];
 			unready = participants.filter((p) => !hasUser(ready, p));
