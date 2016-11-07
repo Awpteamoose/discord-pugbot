@@ -1,3 +1,4 @@
+* Automated raffler?
 * Make the bot tell you who you just picked
 * !rules?
 * Pick by name
