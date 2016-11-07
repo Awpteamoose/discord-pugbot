@@ -179,8 +179,6 @@ client.on("ready", () => {
 			else
 				DB.players[fatkid].fatkid++;
 
-			saveDB();
-
 			var results = `:ok: \nTeam 1:\n`;
 			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
 			results += `\nTeam 2:\n`;
@@ -188,6 +186,19 @@ client.on("ready", () => {
 			results += `\nLET'S FUCKING GO! WOOOOO!\n`;
 			msg.channel.sendMessage(results);
 			clearTimeout(picksTimeout);
+
+			var everyone = teams[0].concat(teams[1]);
+			everyone.forEach((p) => {
+				if (!DB.players[p.id])
+					DB.players[p.id] = {};
+
+				if (!DB.players[p.id].gamesPlayed)
+					DB.players[p.id].gamesPlayed = 1;
+				else
+					DB.players[p.id].gamesPlayed++;
+			});
+
+			saveDB();
 			return reset();
 		}
 
@@ -294,6 +305,29 @@ client.on("ready", () => {
 			return msg.reply("this player hasn't been a fat kid yet!");
 		msg.reply(`${nickname(guild.member(id).user)} has been the fat kid ${DB.players[id].fatkid} times`);
 	};
+	commands.top = (msg, args) => {
+		var top10 = [];
+		for (var i = 0; i < 10; i++) {
+			for (var id in DB.players) {
+				var gamesPlayed = DB.players[id].gamesPlayed;
+				if (!gamesPlayed) continue;
+				if (top10.some((p) => p.id === id)) continue;
+				if (!top10[i] || gamesPlayed > top10[i].gamesPlayed)
+					top10[i] = { "id": id, "gamesPlayed": gamesPlayed };
+			};
+		};
+		var results = `games played: \n`;
+		top10.forEach((p, i) => results += `${i+1}. ${nickname(p.id)} - ${p.gamesPlayed}\n`);
+		msg.reply(results);
+	};
+	commands.gamesPlayedReset = (msg, args) => {
+		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+		for (var id in DB.players) {
+			DB.players[id].gamesPlayed = 0;
+		};
+		saveDB();
+		msg.reply("games counter for each player has been reset!");
+	};
 	// Aliases
 	commands.join = commands.add;
 	commands.leave = commands.remove;
@@ -302,6 +336,7 @@ client.on("ready", () => {
 	commands.info = commands.help;
 	commands.p = commands.pick;
 	commands.fat = commands.fatkid;
+	commands.top10 = commands.top;
 
 	client.on('message', msg => {
 		if (msg.content[0] !== "!") return; // not a command
