@@ -320,7 +320,7 @@ client.on("ready", () => {
 			};
 		};
 		var results = `games played: \n`;
-		top10.forEach((p, i) => results += `${i+1}. ${nickname(guild.member(p.id).user)} - ${p.gamesPlayed}\n`);
+		top10.forEach((p, i) => results += `${i+1}. ${guild.member(p.id) ? nickname(guild.member(p.id).user) : p.id} - ${p.gamesPlayed}\n`);
 		msg.reply(results);
 	};
 	commands.gamesPlayedReset = (msg, args) => {
