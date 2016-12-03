@@ -1,3 +1,5 @@
+* Convert to pure functions?
+* Unit testing?
 * Purple vouching?
 * Private pugs?
 * Purple pugs

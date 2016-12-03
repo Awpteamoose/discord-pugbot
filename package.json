@@ -10,8 +10,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "10.0.1"
+    "discord.js": "10.0.1",
+    "sprintf-js": "1.0.3"
   },
   "repository": "https://github.com/Awpteamoose/pugbot",
-  "license" : "CC0-1.0"
+  "license": "CC0-1.0"
 }

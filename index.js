@@ -2,7 +2,7 @@
 function randomInt(min, max) {
 	min = Math.ceil(min);
 	max = Math.floor(max);
-	return Math.floor(Math.random() * (max - min)) + min;
+	return Math.floor(Math.random() * (max + 1 - min)) + min;
 };
 
 // TODO: use collection.find
@@ -11,7 +11,12 @@ function hasUser(array, user2) {
 	return array.some((user1) => user1.id === user2.id);
 };
 
+Array.prototype.randomElement = function () {
+	return this[randomInt(0, this.length - 1)];
+}
+
 var fs = require('fs');
+var sprintf = require('sprintf-js').sprintf;
 var Discord = require('discord.js');
 var client = new Discord.Client();
 
@@ -29,7 +34,7 @@ if (!DB.players) {
 }
 
 var icons = [];
-for (var i = 0; i <= 12; i++)
+for (var i = 0; i <= config.team_size; i++)
 	icons.push(fs.readFileSync(`./icons/${i}.png`));
 
 var phases = {
@@ -54,17 +59,39 @@ client.on("ready", () => {
 	var picksRemaining;
 	var turn;
 	var picksTimeout;
+	var map_votes;
 
-	var iconStatus = () => guild.setIcon(icons[participants.length]);
+	var iconStatus = () => { if (config.update_icon) guild.setIcon(icons[participants.length]) };
 
-	function nickname(user) {
+	var queue_status = () => `${participants.length}/${config.team_size}`;
+
+	var map_status = () => Object.keys(map_votes)
+		.reduce((acc, id) => {
+			var map = map_votes[id];
+			var existing = acc.find(vote => vote.map == map);
+			if (existing) {
+				existing.votes++;
+			} else {
+				acc.push({ "map": map, "votes": 1 });
+			};
+			return acc;
+		}, [])
+		.sort((a, b) => b.votes - a.votes);
+
+	var play_map = () => {
+		var votes = map_status();
+		return votes[0] ? votes.filter(vote => vote.votes >= votes[0].votes).randomElement().map : config.map_pool.randomElement();
+	};
+
+	var nickname = (user) => {
 		var guildMember = guild.member(user);
 		if (!guildMember || !guildMember.nickname) return user.username;
 		return guildMember.nickname;
-	}
+	};
 
-	function reset() {
+	var reset = () => {
 		participants = [];
+		map_votes = {};
 		phase = phases.GATHER;
 		clearTimeout(readyTimeout);
 		clearTimeout(picksTimeout);
@@ -74,17 +101,17 @@ client.on("ready", () => {
 
 	var commands = {};
 	commands.add = (msg) => {
-		if (msg.channel.name !== "lfg") return;
+		if (msg.channel.name !== config.pug_channel_name) return;
 		if (phase !== phases.GATHER)
-			return msg.reply(`PUG in progress!`);
+			return msg.reply(config.strings.pug_in_progress);
 		if (hasUser(participants, msg.author))
-			return msg.reply(`you're already added! ${participants.length}/12`);
+			return msg.reply(sprintf(config.strings.already_added, queue_status()));
 
 		participants.push(msg.author);
-		msg.reply(`added! ${participants.length}/12`);
+		msg.reply(sprintf(config.strings.add_success, queue_status()));
 		iconStatus();
 
-		if (participants.length >= 12) {
+		if (participants.length >= config.team_size) {
 			var mentions = "1 minute to \`!ready\`\n";
 			participants.forEach((p, i) => mentions += `${p} `);
 			msg.channel.sendMessage(mentions);
@@ -94,7 +121,7 @@ client.on("ready", () => {
 			readyTimeout = setTimeout(() => {
 				var unready = [];
 				unready = participants.filter((p) => !hasUser(ready, p));
-				var reply = `PUG is cancelled, only ${ready.length}/12 readied up!\nUnready removed: `;
+				var reply = `PUG is cancelled, only ${ready.length}/${config.team_size} readied up!\nUnready removed: `;
 				unready.forEach((p) => reply += `${p}, `);
 				reply = reply.substring(0, reply.length - 2);
 				msg.channel.sendMessage(reply);
@@ -108,29 +135,29 @@ client.on("ready", () => {
 	};
 	// TODO: some form of !unready?
 	commands.ready = (msg) => {
-		if (msg.channel.name !== "lfg") return;
+		if (msg.channel.name !== config.pug_channel_name) return;
 		if (phase !== phases.READY_UP) return;
 
 		if (hasUser(ready, msg.author))
-			return msg.reply(`you've already readied up! ${ready.length}/12`);
+			return msg.reply(`you've already readied up! ${ready.length}/${config.team_size}`);
 
 		if (!hasUser(participants, msg.author))
-			return msg.reply(`you're not participating! ${ready.length}/12`);
+			return msg.reply(`you're not participating! ${ready.length}/${config.team_size}`);
 
 		ready.push(msg.author);
-		msg.reply(`you're ready! ${ready.length}/12`);
+		msg.reply(`you're ready! ${ready.length}/${config.team_size}`);
 
-		if (ready.length !== 12) return;
+		if (ready.length !== config.team_size) return;
 
 		captains = [];
-		captains[0] = participants[randomInt(0, 11)];
-		participants = participants.filter((p) => p.id !== captains[0].id);
-		captains[1] = participants[randomInt(0, 10)];
-		participants = participants.filter((p) => p.id !== captains[1].id);
-		// participants now - players available for picking
+		captains[0] = ready.randomElement();
+		ready = ready.filter((p) => p.id !== captains[0].id);
+		captains[1] = ready.randomElement();
+		ready = ready.filter((p) => p.id !== captains[1].id);
+		// ready now - players available for picking
 
 		var mentions = "";
-		participants.forEach((p, i) => mentions += `${i+1}. ${p}\n`);
+		ready.forEach((p, i) => mentions += `${i+1}. ${p}\n`);
 
 		msg.channel.sendMessage(
 			`PUG is starting!\n` +
@@ -155,21 +182,21 @@ client.on("ready", () => {
 		if (msg.author.id !== captains[turn].id) return;
 		if (isNaN(args[1])) return msg.reply(`not a number!`);
 		var number = parseInt(args[1] - 1);
-		if (number < 0 || number >= participants.length) return msg.reply(`there is no such player!`);
-		var picked = participants[number];
+		if (number < 0 || number >= ready.length) return msg.reply(`there is no such player!`);
+		var picked = ready[number];
 		teams[turn].push(picked);
-		participants = participants.filter((p) => p.id !== picked.id);
+		ready = ready.filter((p) => p.id !== picked.id);
 		picksRemaining--;
 
 		if (picksRemaining === 0) {
 			picksRemaining = 2;
 			turn = turn === 0 ? 1 : 0;
-		}
+		};
 
-		if (participants.length === 1)
+		if (ready.length === 1)
 		{
-			teams[turn].push(participants[0]);
-			var fatkid = participants[0].id
+			teams[turn].push(ready[0]);
+			var fatkid = ready[0].id
 
 			if (!DB.players[fatkid])
 				DB.players[fatkid] = {};
@@ -183,12 +210,11 @@ client.on("ready", () => {
 			teams[0].forEach((p, i) => results += `${i+1}. ${p}\n`);
 			results += `\nTeam 2:\n`;
 			teams[1].forEach((p, i) => results += `${i+1}. ${p}\n`);
-			results += `\nLET'S FUCKING GO! WOOOOO!\n`;
+			results += `\nMap: **${play_map()}**\nLET'S FUCKING GO! WOOOOO!\n`;
 			msg.channel.sendMessage(results);
 			clearTimeout(picksTimeout);
 
-			var everyone = teams[0].concat(teams[1]);
-			everyone.forEach((p) => {
+			participants.forEach((p) => {
 				if (!DB.players[p.id])
 					DB.players[p.id] = {};
 
@@ -204,49 +230,59 @@ client.on("ready", () => {
 
 			saveDB();
 			return reset();
-		}
+		};
 
 		var response = `${captains[turn]}, ${picksRemaining} pick${picksRemaining === 2 ? 's':''}\n`;
-		participants.forEach((p, i) => response += `${i+1}. ${p}\n`);
+		ready.forEach((p, i) => response += `${i+1}. ${p}\n`);
 		msg.channel.sendMessage(response);
 	};
 	commands.remove = (msg) => {
-		if (msg.channel.name !== "lfg") return;
+		if (msg.channel.name !== config.pug_channel_name) return;
 		if (phase !== phases.GATHER) return;
 
 		if (!hasUser(participants, msg.author))
-			return msg.reply(`you're not added! ${participants.length}/12`);
+			return msg.reply(`you're not added! ${queue_status()}`);
 		participants = participants.filter((p) => p.id !== msg.author.id);
-		msg.reply(`removed! ${participants.length}/12`);
+		msg.reply(`removed! ${queue_status()}`);
 		iconStatus();
+	};
+	var append_map_votes = (reply) => {
+		var votes = map_status();
+		if (votes[0]) {
+			reply += '\nMap votes:\n';
+			votes.forEach((vote) => reply += `**${vote.map}** - ${vote.votes}, `);
+		}
+		reply = reply.substring(0, reply.length - 2);
+		return reply;
 	};
 	commands.status = (msg) => {
 		if (phase === phases.GATHER) {
 			if (participants.length === 0)
-				return msg.reply(`Last PUG played: ${DB.lastPlayed || 'never'}\nNoone's signed up! 0/12`);
+				return msg.reply(`Last PUG played: ${DB.lastPlayed || 'never'}\nNoone's signed up! 0/${config.team_size}`);
 
-			var response = `Last PUG played: ${DB.lastPlayed || 'never'}\nParticipants are:\n`;
-			participants.forEach((p) => response += `${nickname(p)}\n`);
+			var reply = `Last PUG played: ${DB.lastPlayed || 'never'}\n${queue_status()}, participants are:\n`;
+			participants.forEach((p) => reply += `${nickname(p)}\n`);
+			reply = append_map_votes(reply);
 			iconStatus();
-			msg.reply(`${response}\n${participants.length}/12`);
+			msg.reply(reply);
 		} else if (phase === phases.READY_UP) {
 			var unready = [];
 			unready = participants.filter((p) => !hasUser(ready, p));
 			var reply = `Type \`!ready\` to ready up!. Unready: `;
 			unready.forEach((p) => reply += `${p}, `);
 			reply = reply.substring(0, reply.length - 2);
+			reply = append_map_votes(reply);
 			msg.reply(reply);
 		} else if (phase === phases.PICKING) {
-			var msgTeams = `${msg.author},\nCurrently picked for Team 1:\n`;
-			teams[0].forEach((p, i) => msgTeams += `${i+1}. ${p}\n`);
-			msgTeams += `\nCurrently picked for Team 2:\n`;
-			teams[1].forEach((p, i) => msgTeams += `${i+1}. ${p}\n`);
-			msg.channel.sendMessage(msgTeams);
+			var reply = `${msg.author},\nCurrently picked for Team 1:\n`;
+			teams[0].forEach((p, i) => reply += `${i+1}. ${p}\n`);
+			reply += `\nCurrently picked for Team 2:\n`;
+			teams[1].forEach((p, i) => reply += `${i+1}. ${p}\n`);
+			reply = append_map_votes(reply);
+			msg.channel.sendMessage(reply);
 		};
 	};
-	commands.help = (msg) => {
-		return msg.reply(`available commands: \`!help\`, \`!status\`, \`!add\` (only #lfg), \`!remove\` (only #lfg), \`!me <info>\`, \`!who @mention\`, \`!fatkid @mention\`. Once 12 players are added, the bot will ask everyone to !ready. Then the PUG will start and 2 random players will be chosen as captains.`);
-	};
+	commands.help = (msg) => msg.reply(sprintf(config.strings.help.join("\n"), config));
 	commands.mock = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
 		var id = args[1];
@@ -278,7 +314,7 @@ client.on("ready", () => {
 	commands.mocks = (msg, args) => {
 		if (!guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
 		var me = msg.author;
-		for (var i = 1; i <= 12; i ++) {
+		for (var i = 1; i <= config.team_size; i ++) {
 			var mockArgs = ["mock", i.toString(), args[1]];
 			msg.author = me;
 			commands.mock(msg, mockArgs);
@@ -331,6 +367,22 @@ client.on("ready", () => {
 		saveDB();
 		msg.reply("games counter for each player has been reset!");
 	};
+	commands.maps = (msg) => {
+		var reply_str = "Available maps:";
+		config.map_pool.forEach((mapname) => {
+			reply_str += `\n**${mapname}**`;
+		});
+		reply_str += `\n\nType \`!map <mapname>\` to vote for a map`;
+		msg.reply(reply_str);
+	};
+	commands.votemap = (msg, args) => {
+		if (!hasUser(participants, msg.author)) return msg.reply("only added players may vote for a map!");
+		if (config.map_pool.indexOf(args[1]) <= -1) return msg.reply("no such map exists!");
+		map_votes[msg.author.id] = args[1];
+		var reply = `you voted for **${args[1]}**`;
+		reply = append_map_votes(reply);
+		msg.reply(reply);
+	};
 	// Aliases
 	commands.join = commands.add;
 	commands.leave = commands.remove;
@@ -342,8 +394,8 @@ client.on("ready", () => {
 	commands.top10 = commands.top;
 
 	client.on('message', msg => {
-		if (msg.content[0] !== "!") return; // not a command
-		msg.content = msg.content.substring(1); // strip away the '!'
+		if (msg.content[0] !== config.command_delimeter) return; // not a command
+		msg.content = msg.content.substring(1); // strip away the command delimeter
 		var args = msg.content.split(" ");
 		var command = args[0];
 
