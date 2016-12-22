@@ -1,5 +1,46 @@
 {
 	"discord": {
 		"bot_token": ""
+	},
+	"command_delimeter": "!",
+	"update_icon": true,
+	"team_size": 12,
+	"pug_channel_name": "lfg",
+	"map_pool": [
+		"Hanamura",
+		"Temple of Anubis",
+		"Volskaya Industries",
+		"Dorado",
+		"Route 66",
+		"Watchpoint: Gibraltar",
+		"Hollywood",
+		"King's Row",
+		"Numbani",
+		"Eichenwalde",
+		"Illios",
+		"Lijang Tower",
+		"Nepal",
+	],
+	"strings": {
+		"pug_in_progress": "PUG in progress!",
+		"already_added": "you're already added! %s",
+		"add_success": "added! %s",
+		"help": [
+			"available commands:",
+			"`%(command_delimeter)shelp` - display this blob",
+			"`%(command_delimeter)sstatus` - display current PUG status",
+			"`%(command_delimeter)sadd` (only #lfg) - join the PUG queue",
+			"`%(command_delimeter)sremove` - remove yourself from the PUG queue",
+			"`%(command_delimeter)sready` - ready yourself up when the queue is full, unready players will be kicked after a minute",
+			"`%(command_delimeter)spick #` (only captains) - pick the player number # during the drafting phase",
+			"`%(command_delimeter)smaps` - show a list of available maps",
+			"`%(command_delimeter)svotemap <mapname>` - vote for a map called <mapname>",
+			"`%(command_delimeter)sme <info>` - save some info about yourself",
+			"`%(command_delimeter)swho @mention` - display saved info about @mention",
+			"`%(command_delimeter)sfatkid @mention` - display how many times @mention was picked last",
+			"`%(command_delimeter)stop10` - display 10 most active PUGgers",
+			"Once %(team_size)d players are added, the bot will ask everyone to `!ready`. Then the PUG will start and 2 random players will be chosen as captains.",
+			"After the drafting phase, the most popular map will be chosen (randomly in case of a tie)."
+		]
 	}
 }
