@@ -243,7 +243,7 @@ client.on("ready", () => {
 		if (!hasUser(participants, msg.author))
 			return msg.reply(`you're not added! ${queue_status()}`);
 
-		map_votes[msg.author.id] = null;
+		map_votes[msg.author.id] = undefined;
 		participants = participants.filter((p) => p.id !== msg.author.id);
 		msg.reply(`removed! ${queue_status()}`);
 		iconStatus();
