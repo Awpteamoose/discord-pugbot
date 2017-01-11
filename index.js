@@ -242,6 +242,8 @@ client.on("ready", () => {
 
 		if (!hasUser(participants, msg.author))
 			return msg.reply(`you're not added! ${queue_status()}`);
+
+		map_votes[msg.author.id] = null;
 		participants = participants.filter((p) => p.id !== msg.author.id);
 		msg.reply(`removed! ${queue_status()}`);
 		iconStatus();
@@ -376,10 +378,11 @@ client.on("ready", () => {
 		msg.reply(reply_str);
 	};
 	commands.votemap = (msg, args) => {
+		var mapname = args.slice(1).join(" ");
 		if (!hasUser(participants, msg.author)) return msg.reply("only added players may vote for a map!");
-		if (config.map_pool.indexOf(args[1]) <= -1) return msg.reply("no such map exists!");
-		map_votes[msg.author.id] = args[1];
-		var reply = `you voted for **${args[1]}**`;
+		if (config.map_pool.indexOf(mapname) <= -1) return msg.reply("no such map exists!");
+		map_votes[msg.author.id] = mapname;
+		var reply = `you voted for **${mapname}**`;
 		reply = append_map_votes(reply);
 		msg.reply(reply);
 	};
