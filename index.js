@@ -374,7 +374,7 @@ client.on("ready", () => {
 		config.map_pool.forEach((mapname) => {
 			reply_str += `\n**${mapname}**`;
 		});
-		reply_str += `\n\nType \`!map <mapname>\` to vote for a map`;
+		reply_str += `\n\nType \`!votemap <mapname>\` to vote for a map`;
 		msg.reply(reply_str);
 	};
 	commands.votemap = (msg, args) => {
