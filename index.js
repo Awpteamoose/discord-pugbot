@@ -43,7 +43,7 @@ var phases = {
 	"PICKING": 2
 }
 
-client.on("ready", () => {
+client.once("ready", () => {
 	console.log("Ready to begin! Serving in " + client.channels.array().length + " channels");
 
 	// TODO: spin this for every guild so the bot can be used on multiple guilds with only one instance
@@ -253,8 +253,8 @@ client.on("ready", () => {
 		if (votes[0]) {
 			reply += '\nMap votes:\n';
 			votes.forEach((vote) => reply += `**${vote.map}** - ${vote.votes}, `);
+			reply = reply.substring(0, reply.length - 2);
 		}
-		reply = reply.substring(0, reply.length - 2);
 		return reply;
 	};
 	commands.status = (msg) => {
@@ -406,7 +406,7 @@ client.on("ready", () => {
 			commands[command](msg, args);
 	});
 
-	client.on('disconnected', function () {
+	client.on('disconnect', function () {
 		console.log('Disconnected.');
 		process.exit(1);
 	});
