@@ -1,4 +1,5 @@
-config.json
-node_modules/
+local_config.json5
+/node_modules/
 npm-debug.log
-DB.json
+/DB.json
+/built/

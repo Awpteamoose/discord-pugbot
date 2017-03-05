@@ -1,0 +1,171 @@
+{
+	botToken: "",
+	commandDelimeter: "!", // only 1 character
+	updateIcon: false, // will change the server icon from zero to teamSize * 2 if true
+	teamSize: 5,
+	locale: "en",
+
+	// The bot will have separate state for every channel
+	pugChannels: [
+		"pug",
+		"purple_pug",
+	],
+
+	mapVoting: true,
+
+	/* Example:
+	maps: [
+		"de_dust2",
+		"de_mirage",
+		"de_cache",
+		"de_nuke",
+		"de_train",
+		"de_cobblestone",
+		"de_overpass",
+		"King's Row",
+	],
+	*/
+
+	// between '<%' and '%>' it's actually plain javascript code
+	// https://www.npmjs.com/package/ejs
+	strings: {
+		reset: "PUGBOT reset!",
+		never: "never",
+		pug_in_progress: "PUG in progress!",
+		already_added: "you're already added! <%- `${players.length}/${teamSize * 2}` %>",
+		not_added: "you're not added! <%- `${players.length}/${teamSize * 2}` %>",
+		add_success: "added! <%- `${players.length}/${teamSize * 2}` %>",
+		removed: "removed! <%- `${players.length}/${teamSize * 2}` %>",
+		ready_error_already: "you've already readied up! <%- `${ready().length}/${teamSize * 2}` %>",
+		ready_error_not_playing: "you're not participating! <%- `${ready().length}/${teamSize * 2}` %>",
+		ready_success: "you're ready! <%- `${ready().length}/${teamSize * 2}` %>",
+		me_saved: "gotcha!",
+		me_no_data: "nothing on you yet!",
+		me_print: "you're <%- info %>",
+		who_no_data: "nothing on <%- name %> yet!",
+		who_print: "<%- name %> is <%- info %>",
+		fatkid_never: "this player hasn't been a fat kid yet!",
+		fatkid_me_never: "you have never been a fat kid!",
+		fatkid_print: "<%- name %> has been the fat kid <%- fatkidTimes %> times",
+		fatkid_me_print: "you have been the fat kid <%- fatkidTimes %> times",
+		map_error_not_added: "only added players may vote for a map!",
+		map_error_NaN: "not a number!",
+		map_error_wrong_map: "no such map exists!",
+		picking_timeout: "PUG is cancelled, the pick phase is taking too long for some reason.",
+		pick_error_NaN: "not a number!",
+		pick_error_wrong_number: "there is no such player!",
+		pick_error_already_picked: "this player is already picked!",
+		status_ready: "type `<%- commandDelimeter %>ready` to ready up! Unready: <%- listMentions(unready()) %>",
+		top10_no_games: "noone has played any games yet!",
+		top10_print: "\
+			games played:\n\
+			<% top10.forEach((entry) => { -%>\n\
+				<%- `${entry.name} - ${entry.gamesPlayed}` %>\n\
+			<% }) -%>",
+		map_vote_success: "\
+			you voted for **<%- map %>**\n\
+			<% if (mapVotes().length > 0) { -%>\n\
+				Map votes:\n\
+				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+			<% } -%>",
+		map_list: "\
+			Available maps:\n\
+			<% maps.forEach((map, i) => { -%>\n\
+				<%- `${i + 1}. ${map}` %>\n\
+			<% }) -%>\n\
+			\n\
+			Type `<%- commandDelimeter %>votemap #` to vote for a map number #",
+		ready_alert: "\
+			1 minute to `<%- commandDelimeter %>ready`, type `<%- commandDelimeter %>status` to check who isn't `<%- commandDelimeter %>ready`\n\
+			Unready: <%- listMentions(unready()) %>",
+		status_gather_empty: "\
+			Last PUG played: <%- last() %>\n\
+			Noone's signed up! 0/<%- teamSize * 2 %>",
+		status_gather: "\
+			Last PUG played: <%- last() %>\n\
+			Participants are:\n\
+			<%- listNames(players) %>\n\
+			<%- `${players.length}/${teamSize * 2}` %>\n\
+			\n\
+			<% if (mapVotes().length > 0) { -%>\n\
+				Map votes:\n\
+				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+			<% } -%>",
+		status_picking: "\
+			<%- picker.user %>, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
+			<% players.forEach((player, i) => { -%>\n\
+				<% if (player.team === 0) { -%>\n\
+					<%- `:white_check_mark: ${i + 1}. ${player.user}` %>\n\
+				<% } else if (!isCaptain(player)) {  -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team}` %>\n\
+				<% } else { -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team} **CAPTAIN**` %>\n\
+				<% } -%>\n\
+			<% }) -%>\n\
+			\n\
+			<% if (mapVotes().length > 0) { -%>\n\
+				Map votes:\n\
+				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+			<% } -%>",
+		ready_timeout: "\
+			PUG is cancelled, only <%- `${ready().length}/${teamSize * 2}` %> readied up!\n\
+			Unready removed: <%- listMentions(unready()) %>",
+		starting: "\
+			PUG is starting!\n\
+			<% players.forEach((player, i) => { -%>\n\
+				<% if (player.team === 0) { -%>\n\
+					<%- `:white_check_mark: ${i + 1}. ${player.user}` %>\n\
+				<% } else if (!isCaptain(player)) {  -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team}` %>\n\
+				<% } else { -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team} **CAPTAIN**` %>\n\
+				<% } -%>\n\
+			<% }) -%>\n\
+			\n\
+			Captains are <%- captain1() %> (picks first, Team 1) and <%- captain2() %> (picks second, Team 2)\n\
+			`<%- commandDelimeter %>pick X` to pick player number X\n\
+			Pick order is 1-2-2-2-2-1",
+		picks_remaining: "\
+			<%- picker.user %>, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
+			<% players.forEach((player, i) => { -%>\n\
+				<% if (player.team === 0) { -%>\n\
+					<%- `:white_check_mark: ${i + 1}. ${player.user}` %>\n\
+				<% } else if (!isCaptain(player)) {  -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team}` %>\n\
+				<% } else { -%>\n\
+					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team} **CAPTAIN**` %>\n\
+				<% } -%>\n\
+			<% }) -%>",
+		lets_go: "\
+			:ok:\n\
+			Team 1:\n\
+			<% team1().forEach((player, i) => { -%>\n\
+				<%- `${i + 1}. ${player.user}` %>\n\
+			<% }) -%>\n\
+			\n\
+			Team 2:\n\
+			<% team2().forEach((player, i) => { -%>\n\
+				<%- `${i + 1}. ${player.user}` %>\n\
+			<% }) -%>\n\
+			\n\
+			Map: **<%- mapWinner().map %>**\n\
+			LET'S FUCKING GO! WOOOOOO!",
+		help: "\
+			available commands:\n\
+			`<%- commandDelimeter %>help` - display this blob\n\
+			`<%- commandDelimeter %>status` - display current PUG status\n\
+			`<%- commandDelimeter %>add` - join the PUG queue\n\
+			`<%- commandDelimeter %>remove` - remove yourself from the PUG queue\n\
+			`<%- commandDelimeter %>ready` - ready yourself up when the queue is full, unready players will be kicked after a minute\n\
+			`<%- commandDelimeter %>pick #` (only captains) - pick the player number # during the drafting phase\n\
+			`<%- commandDelimeter %>maps` - show a list of available maps\n\
+			`<%- commandDelimeter %>votemap <mapname>` - vote for a map called <mapname>\n\
+			`<%- commandDelimeter %>me <info>` - save some info about yourself\n\
+			`<%- commandDelimeter %>who @mention` - display saved info about @mention\n\
+			`<%- commandDelimeter %>fatkid @mention` - display how many times @mention was picked last\n\
+			`<%- commandDelimeter %>top10` - display 10 most active PUGgers\n\
+			\n\
+			Once <%= teamSize * 2 %> players are added, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
+			After the drafting phase, the most popular map will be chosen (randomly in case of a tie).",
+	}
+}
