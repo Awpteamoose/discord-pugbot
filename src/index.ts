@@ -526,10 +526,10 @@ commands.mocks = (msg, args, state) => {
 };
 commands.ms = commands.mocks;
 
-commands.eval = (msg, args, state) => {
-	if (msg.author.id !== "96338667253006336") return;
-	try { msg.reply(eval(args.join(" "))); } catch (e) { }; // tslint:disable-line
-};
+// commands.eval = (msg, args, state) => {
+//     if (msg.author.id !== "96338667253006336") return;
+//     try { msg.reply(eval(args.join(" "))); } catch (e) { }; // tslint:disable-line
+// };
 
 client.once("ready", () => {
 	console.log("Booting up!");

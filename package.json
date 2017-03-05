@@ -1,15 +1,15 @@
 {
-  "name": "PUGBOT",
+  "name": "discord-pugbot",
   "description": "Make dem pugs yo.",
-  "version": "0.1.0",
+  "version": "1.0.3",
   "author": {
     "name": "Awpteamoose"
   },
   "scripts": {
-    "compile": "node node_modules/typescript/bin/tsc",
     "lint": "node node_modules/tslint/bin/tslint --type-check --project tsconfig.json",
-    "run": "node --throw-deprecation --trace-warnings built/index.js",
-    "start": "npm run-script lint && npm run-script compile && npm run-script run"
+    "postinstall": "node node_modules/typescript/bin/tsc",
+    "start": "node --throw-deprecation --trace-warnings built/index.js",
+    "test": "npm run-script postinstall && npm run-script lint && npm start"
   },
   "dependencies": {
     "@types/deepmerge": "1.3.0",
@@ -36,6 +36,6 @@
     "typescript": "2.2.1",
     "uws": "0.12.0"
   },
-  "repository": "https://github.com/Awpteamoose/pugbot",
+  "repository": "https://github.com/Awpteamoose/discord-pugbot",
   "license": "CC0-1.0"
 }
