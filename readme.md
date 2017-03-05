@@ -1,4 +1,8 @@
-## PUGBOT
+## discord-pugbot
+
+<a href="https://www.npmjs.com/package/discord-pugbot"><img src="https://img.shields.io/npm/v/discord-pugbot.svg?maxAge=3600" alt="NPM version" /></a>
+<a href="https://www.npmjs.com/package/discord-pugbot"><img src="https://img.shields.io/npm/dt/discord-pugbot.svg?maxAge=3600" alt="NPM downloads" /></a>
+<a href="https://david-dm.org/hydrabolt/discord-pugbot"><img src="https://david-dm.org/awpteamoose/pugbot.svg?maxAge=3600" alt="Dependencies" /></a>
 
 ### Installation
 1. Install nodejs
