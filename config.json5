@@ -150,7 +150,7 @@
 				<%- `${i + 1}. ${player.user}` %>\n\
 			<% }) -%>\n\
 			\n\
-			Map: **<%- mapWinner().map %>**\n\
+			Map: **<%- map %>**\n\
 			LET'S FUCKING GO! WOOOOOO!",
 		help: "\
 			available commands:\n\

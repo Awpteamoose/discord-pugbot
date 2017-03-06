@@ -1,13 +1,13 @@
 {
   "name": "discord-pugbot",
   "description": "Make dem pugs yo.",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": {
     "name": "Awpteamoose"
   },
   "scripts": {
-    "lint": "node node_modules/tslint/bin/tslint --type-check --project tsconfig.json",
-    "postinstall": "node node_modules/typescript/bin/tsc",
+    "lint": "node_modules/.bin/tslint --type-check --project tsconfig.json",
+    "postinstall": "node_modules/.bin/tsc",
     "start": "node --throw-deprecation --trace-warnings built/index.js",
     "test": "npm run-script postinstall && npm run-script lint && npm start"
   },

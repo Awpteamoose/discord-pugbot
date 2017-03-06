@@ -276,7 +276,7 @@ interface Match {
 }
 
 const startGame = (channel: Discord.TextChannel, state: State): void => {
-	channel.send(templateString("lets_go"));
+	channel.send(templateString("lets_go", { map: mapWinner(state.players) }));
 
 	state.players.pipe(
 		R.map((player: Player) => player.user.id),
@@ -568,7 +568,6 @@ client.once("ready", () => {
 				team1: () => team(1)(state.players),
 				team2: () => team(2)(state.players),
 				mapVotes: () => mapVotes(state.players).filter((e: MapEntry) => e.votes > 0),
-				mapWinner: () => mapWinner(state.players),
 				last: () => {
 					const matches = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/matches`, new Array<Match>());
 					if (matches.length === 0) return templateString("never");
