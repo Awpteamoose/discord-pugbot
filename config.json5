@@ -84,7 +84,9 @@
 		status_gather: "\
 			Last PUG played: <%- last() %>\n\
 			Participants are:\n\
+			\n\
 			<%- listNames(players) %>\n\
+			\n\
 			<%- `${players.length}/${teamSize * 2}` %>\n\
 			\n\
 			<% if (mapVotes().length > 0) { -%>\n\
