@@ -60,12 +60,11 @@ const mentionToUserID = (mention: string): string | undefined => {
 	return id[1];
 };
 
-const realName = (member: Discord.GuildMember): string => {
-	if (member.nickname) {
-		return member.nickname;
-	} else {
-		return member.user.username;
-	}
+const realName = (guild: Discord.Guild, userResolvable: Discord.UserResolvable): string => {
+	const member = guild.member(userResolvable);
+	if (!member) return userResolvable.toString();
+	if (member.nickname) return member.nickname;
+	return member.user.username;
 };
 
 let templateString: (str: TemplateKey, extraData?: object) => string;
@@ -175,7 +174,7 @@ commands.who = (msg, args, state) => {
 	if (!args[0]) return;
 	const id = mentionToUserID(args[0]);
 	if (!id) return;
-	const name = realName(msg.guild.member(id));
+	const name = realName(msg.guild, id);
 	const info = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${id}/info`);
 
 	if (info) msg.reply(templateString("who_print", { name, info }));
@@ -191,12 +190,11 @@ commands.fatkid = (msg, args, state) => {
 	} else {
 		const id = mentionToUserID(args[0]);
 		if (!id) return;
-		const fatkid = msg.guild.member(id);
-		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${fatkid.id}/fatkid`);
+		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${id}/fatkid`);
 		if (!fatkidTimes)
-			msg.reply(templateString("fatkid_never", { name: realName(fatkid) }));
+			msg.reply(templateString("fatkid_never", { name: realName(msg.guild, id) }));
 		else
-			msg.reply(templateString("fatkid_print", { fatkidTimes, name: realName(fatkid) }));
+			msg.reply(templateString("fatkid_print", { fatkidTimes, name: realName(msg.guild, id) }));
 	}
 };
 
@@ -210,7 +208,7 @@ commands.top10 = (msg, args, state) => {
 	const top10 = R.keys(players).pipe(
 		R.map((id: string) => {
 			const player: JSONObject = players[id] || { };
-			return { name: realName(msg.guild.member(id)), gamesPlayed: player.gamesPlayed as number || 0 };
+			return { name: realName(msg.guild, id), gamesPlayed: player.gamesPlayed as number || 0 };
 		}),
 		R.filter((p: PlayerData) => p.gamesPlayed > 0),
 		R.sort((a: PlayerData, b: PlayerData) => b.gamesPlayed - a.gamesPlayed),
@@ -461,7 +459,7 @@ commands.help = (msg, args, state) => {
 };
 
 commands.reset = (msg, args, state) => {
-	if (!msg.guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 	msg.reply(templateString("reset"));
 	state.reset();
 
@@ -470,26 +468,29 @@ commands.reset = (msg, args, state) => {
 };
 
 commands.force = (msg, args, state) => {
-	if (!msg.guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	const id = mentionToUserID(args[0]);
 	if (!id) return;
 
-	const subject = msg.guild.member(id).user;
-	if (!subject) return;
+	const member = msg.guild.member(id);
+	if (!member) return;
 
-	msg.author = subject;
+	msg.member = member;
+	msg.author = member.user;
 	if (commands[args[1]])
 		commands[args[1]](msg, args.slice(2), state);
 };
 
 commands.mock = (msg, args, state) => {
 	if (!config.mockUsers) return;
-	if (!msg.guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	const id = Number(args[0]);
 
-	msg.author = msg.guild.member(config.mockUsers[id - 1]).user;
+	const mockMember = msg.guild.member(config.mockUsers[id - 1]) as Discord.GuildMember;
+	msg.member = mockMember;
+	msg.author = mockMember.user;
 	if (commands[args[1]])
 		commands[args[1]](msg, args.slice(2), state);
 };
@@ -497,7 +498,7 @@ commands.m = commands.mock;
 
 commands.mocks = (msg, args, state) => {
 	if (!config.mockUsers) return;
-	if (!msg.guild.member(msg.author).hasPermission("ADMINISTRATOR")) return;
+	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	if (args[0] === "pick") {
 		while (state.picker) {
@@ -511,7 +512,9 @@ commands.mocks = (msg, args, state) => {
 
 	if (args[0] === "votemap") {
 		for (let i = 0; i < config.teamSize * 2; i += 1) {
-			msg.author = msg.guild.member(config.mockUsers[i]).user;
+			const mockMember = msg.guild.member(config.mockUsers[i]) as Discord.GuildMember;
+			msg.member = mockMember;
+			msg.author = mockMember.user;
 			args[1] = (H.randomIndex(config.maps) + 1).toString();
 			commands.votemap(msg, args.slice(1), state);
 		}
@@ -519,7 +522,9 @@ commands.mocks = (msg, args, state) => {
 	}
 
 	for (let i = 0; i < config.teamSize * 2; i += 1) {
-		msg.author = msg.guild.member(config.mockUsers[i]).user;
+		const mockMember = msg.guild.member(config.mockUsers[i]) as Discord.GuildMember;
+		msg.member = mockMember;
+		msg.author = mockMember.user;
 		if (commands[args[0]])
 			commands[args[0]](msg, args.slice(1), state);
 	}
@@ -557,7 +562,7 @@ client.once("ready", () => {
 		templateString = (str, extraData) => {
 			const templateData = {
 				listNames: (players: Array<Player>): string => players.reduce((acc, player) =>
-					`${acc}${realName(msg.guild.member(player.user))}, `, "").slice(0, -2),
+					`${acc}${realName(msg.guild, player.user)}, `, "").slice(0, -2),
 				listMentions: (players: Array<Player>): string => players.reduce((acc, player) =>
 					`${acc}${player.user}, `, "").slice(0, -2),
 				ready: () => ready(state.players),
