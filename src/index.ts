@@ -23,7 +23,7 @@ const tryGet: {
 };
 const client = new Discord.Client();
 
-type TemplateKey = "reset" | "never" | "me_print" | "me_no_data" | "me_saved" | "who_print" | "who_no_data" |
+type TemplateKey = "reset" | "never" | "not_server_member" | "me_print" | "me_no_data" | "me_saved" | "who_print" | "who_no_data" |
 	"ready_alert" | "ready_timeout" | "starting" | "picking_timeout" | "lets_go" | "already_added" | "add_success" | "not_added" |
 	"removed" | "ready_error_not_playing" | "ready_error_already" | "ready_success" | "pick_error_NaN" |
 	"pick_error_wrong_number" | "pick_error_already_picked" | "picks_remaining" | "map_list" | "map_error_not_added" |
@@ -60,14 +60,14 @@ const mentionToUserID = (mention: string): string | undefined => {
 	return id[1];
 };
 
+let templateString: (str: TemplateKey, extraData?: object) => string;
+
 const realName = (guild: Discord.Guild, userResolvable: Discord.UserResolvable): string => {
 	const member = guild.member(userResolvable);
-	if (!member) return userResolvable.toString();
+	if (!member) return `<@${userResolvable.toString()}> (${templateString("not_server_member")})`;
 	if (member.nickname) return member.nickname;
 	return member.user.username;
 };
-
-let templateString: (str: TemplateKey, extraData?: object) => string;
 
 const unready = (players: Array<Player>): Array<Player> =>
 	players.filter((player) => player.state !== PlayerState.Ready);

@@ -31,6 +31,7 @@
 	strings: {
 		reset: "PUGBOT reset!",
 		never: "never",
+		not_server_member: "not on server",
 		pug_in_progress: "PUG in progress!",
 		already_added: "you're already added! <%- `${players.length}/${teamSize * 2}` %>",
 		not_added: "you're not added! <%- `${players.length}/${teamSize * 2}` %>",
