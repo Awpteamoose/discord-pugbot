@@ -95,7 +95,7 @@
 				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
 			<% } -%>",
 		status_picking: "\
-			<%- picker.user %>, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
+			It's <%- picker.user %>'s turn, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
 			<% players.forEach((player, i) => { -%>\n\
 				<% if (player.team === 0) { -%>\n\
 					<%- `:white_check_mark: ${i + 1}. ${player.user}` %>\n\

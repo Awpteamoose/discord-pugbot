@@ -274,7 +274,7 @@ interface Match {
 }
 
 const startGame = (channel: Discord.TextChannel, state: State): void => {
-	channel.send(templateString("lets_go", { map: mapWinner(state.players) }));
+	channel.send(templateString("lets_go", { map: mapWinner(state.players).map }));
 
 	state.players.pipe(
 		R.map((player: Player) => player.user.id),
@@ -448,7 +448,7 @@ commands.status = (msg, args, state) => {
 			msg.reply(templateString("status_ready"));
 			break;
 		case Phase.Picking:
-			msg.reply(templateString("status_picking"));
+			msg.channel.send(templateString("status_picking"));
 			break;
 		default: return console.error("WTF PHASE IS FUCKED UP");
 	}
