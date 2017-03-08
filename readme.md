@@ -9,7 +9,7 @@
 	* Windows: https://nodejs.org/dist/v7.6.0/node-v7.6.0-x64.msi
 	* Ubuntu: `sudo apt-get install nodejs && sudo apt-get install npm && sudo ln -s "$(which nodejs)" /usr/bin/node`
 	* Other: you probably know better
-1. Run `npm install -g discord-bot --production`
+1. Run `npm install -g discord-pugbot --production`
 2. Navigate to a folder where you would like to store configuration for the bot.
 3. Run `discord-pugbot --init`
 4. Go to https://discordapp.com/developers/applications/me/create
