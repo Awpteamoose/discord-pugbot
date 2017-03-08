@@ -66,7 +66,7 @@ interface Config {
 
 const config: Config = JSON5.parse(fs.readFileSync("config.json5").toString());
 
-const icons = ([]: Array<number>).fill(0, 0, 12).map((_, i) => fs.readFileSync(`assets/${i}.png`)); // 0.png .. 12.png
+const icons = R.repeat(0, 13).map((_, i) => fs.readFileSync(`assets/${i}.png`)); // 0.png .. 12.png
 
 // * Some helper functions * \\
 const unindent = R.mapObjIndexed((str: string): string => str.replace(/\t+/g, ""));
@@ -607,15 +607,6 @@ client.once("ready", () => {
 				},
 			};
 
-			// TODO: consider evaling template strings
-			/*
-			 * var data = "dick";
-			 * var template = "I like ${data} the most";
-			 * var result = eval(`(()=>\`${b}\`)()`);
-			 *
-			 * Pros: nicer, shorter
-			 * Cons: somewhat weird to avoid extensive whitespace
-			 */
 			if (unindent(config.strings)[str])
 				return ejs.render(unindent(config.strings)[str], { ...config, ...state, ...templateData, ...extraData });
 			return ejs.render(str, { ...config, ...state, ...templateData, ...extraData });
