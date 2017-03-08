@@ -4,6 +4,8 @@
 <a href="https://www.npmjs.com/package/discord-pugbot"><img src="https://img.shields.io/npm/dt/discord-pugbot.svg?maxAge=3600" alt="NPM downloads" /></a>
 <a href="https://david-dm.org/hydrabolt/discord-pugbot"><img src="https://david-dm.org/awpteamoose/pugbot.svg?maxAge=3600" alt="Dependencies" /></a>
 
+<a href="https://patreon.com/awpteamoose"><img src="https://s3.amazonaws.com/patreon_public_assets/toolbox/patreon.png" height="20" alt="Support me on Patreon!" /></a>
+
 ### Installation
 0. Install `nodejs` and `npm`
 	* Windows: https://nodejs.org/dist/v7.6.0/node-v7.6.0-x64.msi
