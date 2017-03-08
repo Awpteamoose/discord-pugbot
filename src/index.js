@@ -1,26 +1,46 @@
-import * as smap from "source-map-support"; smap.install();
+#!/usr/bin/env node
+import "babel-polyfill";
+require("source-map-support").install();
+
 import * as fs from "fs";
-// import { sprintf } from "sprintf-js";
 import * as Discord from "discord.js";
-import * as JSON5 from "json5";
-import JSONDB = require("node-json-db"); // tslint:disable-line
-// import * as merge from "deepmerge";
+import JSON5 from "json5";
+import JsonDB from "node-json-db";
 import * as ejs from "ejs";
 import * as R from "ramda";
-import * as moment from "moment";
+import moment from "moment";
 import * as H from "awpteamoose/helpers";
 
-const db = new JSONDB("DB", true, true);
-const tryGet: {
-	<T> (jdb: JSONDB, dataPath: string, fallback: T): T;
-	(jdb: JSONDB, dataPath: string): JSONValue;
-} = <T> (jdb: JSONDB, dataPath: string, fallback?: T): JSONValue | T => {
+type JSONValue = ?string | ?number | ?boolean | ?JSONObject | ?JSONArray;
+type JSONObject = { [key: string]: ?JSONValue };
+type JSONArray = Array<JSONValue>;
+
+const db = new JsonDB("DB", true, true);
+
+if (!process.argv[2]) {
+	console.log("Usage: discord-pugbot [--init | --run]");
+	process.exit(0);
+}
+
+if (process.argv[2] === "--init") {
+	fs.writeFileSync("config.json5", fs.readFileSync(`${__dirname}/../config.json5`));
+	if (!fs.existsSync("assets")) fs.mkdirSync("assets");
+	for (let i = 0; i <= 12; i += 1)
+		fs.writeFileSync(`assets/${i}.png`, fs.readFileSync(`${__dirname}/../assets/${i}.png`));
+	process.exit(0);
+}
+
+if (!process.argv[2] === "--run") process.exit(0);
+
+declare function tryGet<T>(jdb: JsonDB, dataPath: string, fallback: T): T;
+declare function tryGet(jdb: JsonDB, dataPath: string): JSONValue;
+function tryGet<T>(jdb: JsonDB, dataPath: string, fallback?: T): JSONValue | T {
 	try {
 		return jdb.getData(dataPath);
 	} catch (e) {
 		return fallback;
 	}
-};
+}
 const client = new Discord.Client();
 
 type TemplateKey = "reset" | "never" | "not_server_member" | "me_print" | "me_no_data" | "me_saved" | "who_print" | "who_no_data" |
@@ -32,35 +52,32 @@ type TemplateKey = "reset" | "never" | "not_server_member" | "me_print" | "me_no
 	"top10_no_games" | "top10_print";
 
 interface Config {
-	readonly botToken: string;
-	readonly commandDelimeter: string;
-	readonly updateIcon: boolean;
-	readonly teamSize: number;
-	readonly pugChannels: Array<string>;
-	readonly mapVoting: boolean;
-	readonly maps: Array<string>;
-	readonly mockUsers: Array<string> | undefined;
-	readonly locale: string;
-	readonly strings: { [key in TemplateKey]: string };
+	botToken: string;
+	commandDelimeter: string;
+	updateIcon: boolean;
+	teamSize: number;
+	pugChannels: Array<string>;
+	mapVoting: boolean;
+	maps: Array<string>;
+	mockUsers: ?Array<string>;
+	locale: string;
+	strings: { [key: string]: string };
 }
 
-let config = JSON5.parse(fs.readFileSync("config.json5").toString()) as Config;
-try {
-	const localConfig = JSON5.parse(fs.readFileSync("local_config.json5").toString());
-	config = { ...config, ...localConfig };
-} catch (e) {}
-const unindent = R.mapObjIndexed((str: string): string => str.replace(/\t+/g, ""));
+const config: Config = JSON5.parse(fs.readFileSync("config.json5").toString());
 
-const icons = new Array<number>(13).fill(0).map((_, i) => fs.readFileSync(`assets/${i}.png`)); // 0.png .. 12.png
+const icons = ([]: Array<number>).fill(0, 0, 12).map((_, i) => fs.readFileSync(`assets/${i}.png`)); // 0.png .. 12.png
 
 // * Some helper functions * \\
-const mentionToUserID = (mention: string): string | undefined => {
+const unindent = R.mapObjIndexed((str: string): string => str.replace(/\t+/g, ""));
+
+const mentionToUserID = (mention: string): ?string => {
 	const id = mention.match(/(?:<@|<@!)(\d+)(?:>)/);
 	if (!id) return;
 	return id[1];
 };
 
-let templateString: (str: TemplateKey, extraData?: object) => string;
+let templateString: (str: TemplateKey, extraData?: {}) => string;
 
 const realName = (guild: Discord.Guild, userResolvable: Discord.UserResolvable): string => {
 	const member = guild.member(userResolvable);
@@ -70,10 +87,10 @@ const realName = (guild: Discord.Guild, userResolvable: Discord.UserResolvable):
 };
 
 const unready = (players: Array<Player>): Array<Player> =>
-	players.filter((player) => player.state !== PlayerState.Ready);
+	players.filter((player) => player.state !== "Ready");
 
 const ready = (players: Array<Player>): Array<Player> =>
-	players.filter((player) => player.state === PlayerState.Ready);
+	players.filter((player) => player.state === "Ready");
 
 const team = (teamID: number) => (players: Array<Player>): Array<Player> =>
 	players.filter((player) => player.team === teamID);
@@ -81,53 +98,42 @@ const team = (teamID: number) => (players: Array<Player>): Array<Player> =>
 const available = (players: Array<Player>): Array<Player> =>
 	players.filter((player) => player.team === 0);
 
-const captainOf = (teamID: number) => (players: Array<Player>): Player =>
-	players.find((player) => player.team === teamID && player.state === PlayerState.Captain) as Player;
+const captainOf = (teamID: number) => (players: Array<Player>) =>
+	players.find((player) => player.team === teamID && player.state === "Captain");
 
 const mapVotes = (players: Array<Player>): Array<MapEntry> => {
-	return players.pipe(
+	return R.pipe(
 		R.filter((player: Player) => player.mapVote >= 0), // disregard players that haven't voted
 		R.map((player: Player): string => config.maps[player.mapVote]),
 		R.reduce((acc: Array<MapEntry>, map: string) => {
 			const e = acc.find((entry) => entry.map === map);
 			if (e) e.votes += 1;
 			return acc;
-		}, config.maps.pipe(R.map(H.factory(MapEntry)))),
-		R.sort((a: MapEntry, b: MapEntry) => b.votes - a.votes),
-	);
+		}, R.pipe(R.map(MapEntry.make))(config.maps)),
+		R.sort((a: MapEntry, b: MapEntry) => b.votes - a.votes)
+	)(players);
 };
 
-const mapWinner = (players: Array<Player>): MapEntry => players.pipe(
+const mapWinner = (players: Array<Player>): MapEntry => R.pipe(
 	mapVotes,
 	R.filter((entry: MapEntry) => entry.votes === mapVotes(players)[0].votes),
 	H.pickRandom,
-);
+)(players);
 // * * * * * \\
 
-const enum Phase {
-	Gather,
-	ReadyUp,
-	Picking,
-}
-
-const enum PlayerState {
-	SignedUp,
-	Ready,
-	Picked,
-	Captain,
-}
+type Phase = "Gather" | "ReadyUp" | "Picking";
+type PlayerState = "SignedUp" | "Ready" | "Picked" | "Captain";
 
 class MapEntry {
 	map: string;
-	votes = 0;
-
-	constructor(map: string) {
-		this.map = map;
-	}
+	votes: number;
+	static make = (map: string): MapEntry => {
+		return new MapEntry({ map, votes: 0 });
+	};
 }
 
 class Player {
-	state = PlayerState.SignedUp;
+	state: PlayerState = "SignedUp";
 	team = 0;
 	mapVote = -1;
 	user: Discord.User;
@@ -137,19 +143,26 @@ class Player {
 	}
 }
 
+// class MapEntry {
+//     map: string;
+//     votes: number;
+//     static make = (map: string): MapEntry => {
+//         return new MapEntry({ map, votes: 0 });
+//     };
+// }
 class State {
-	phase = Phase.Gather;
-	players = new Array<Player>();
-	picker: Player | undefined;
+	phase: Phase = "Gather";
+	players: Array<Player> = [];
+	picker: ?Player;
 	picksRemaining = 0;
 	readyFinished: () => void = () => {};
 	picksFinished: () => void = () => {};
 
-	reset = (): void => {
+	reset(): void {
 		this.readyFinished();
 		this.picksFinished();
-		this.phase = Phase.Gather;
-		this.players = new Array<Player>();
+		this.phase = "Gather";
+		this.players = [];
 		this.picker = undefined;
 		this.picksRemaining = 0;
 		this.readyFinished = () => {};
@@ -158,9 +171,10 @@ class State {
 }
 
 const states: { [key: string]: State } = {};
-const commands: { [key: string]: (msg: Discord.Message, args: Array<string>, state: State) => void } = {};
-commands.me = (msg, args, state) => {
-	const datapath = `/${msg.guild.id}/${msg.channel.id}/users/${msg.author.id}`;
+type Command = (msg: Discord.Message, channel: Discord.TextChannel, args: Array<string>, state: State) => void;
+const commands: { [key: string]: Command } = {};
+commands.me = (msg, channel, args) => {
+	const datapath = `/${msg.guild.id}/${channel.id}/users/${msg.author.id}`;
 	if (args.length === 0) {
 		const info = tryGet(db, `${datapath}/info`);
 		if (info) msg.reply(templateString("me_print", { info }));
@@ -170,19 +184,19 @@ commands.me = (msg, args, state) => {
 		msg.reply(templateString("me_saved"));
 	}
 };
-commands.who = (msg, args, state) => {
+commands.who = (msg, channel, args) => {
 	if (!args[0]) return;
 	const id = mentionToUserID(args[0]);
 	if (!id) return;
 	const name = realName(msg.guild, id);
-	const info = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${id}/info`);
+	const info = tryGet(db, `/${msg.guild.id}/${channel.id}/users/${id}/info`);
 
 	if (info) msg.reply(templateString("who_print", { name, info }));
 	else msg.reply(templateString("who_no_data", { name }));
 };
-commands.fatkid = (msg, args, state) => {
+commands.fatkid = (msg, channel, args) => {
 	if (args.length === 0) {
-		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${msg.author.id}/fatkid`);
+		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${channel.id}/users/${msg.author.id}/fatkid`);
 		if (!fatkidTimes)
 			msg.reply(templateString("fatkid_me_never"));
 		else
@@ -190,7 +204,7 @@ commands.fatkid = (msg, args, state) => {
 	} else {
 		const id = mentionToUserID(args[0]);
 		if (!id) return;
-		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users/${id}/fatkid`);
+		const fatkidTimes = tryGet(db, `/${msg.guild.id}/${channel.id}/users/${id}/fatkid`);
 		if (!fatkidTimes)
 			msg.reply(templateString("fatkid_never", { name: realName(msg.guild, id) }));
 		else
@@ -198,22 +212,23 @@ commands.fatkid = (msg, args, state) => {
 	}
 };
 
-commands.top10 = (msg, args, state) => {
+commands.top10 = (msg, channel) => {
 	interface PlayerData {
 		name: string;
 		gamesPlayed: number;
 	}
 
-	const players = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/users`, {} as { [key: string]: JSONObject });
-	const top10 = R.keys(players).pipe(
-		R.map((id: string) => {
-			const player: JSONObject = players[id] || { };
-			return { name: realName(msg.guild, id), gamesPlayed: player.gamesPlayed as number || 0 };
+	const players = tryGet(db, `/${msg.guild.id}/${channel.id}/users`, ({}: JSONObject));
+	const top10 = R.pipe(
+		R.keys,
+		R.map((id) => {
+			const player = players[id] || { };
+			return { name: realName(msg.guild, id), gamesPlayed: (player.gamesPlayed: number) || 0 };
 		}),
 		R.filter((p: PlayerData) => p.gamesPlayed > 0),
 		R.sort((a: PlayerData, b: PlayerData) => b.gamesPlayed - a.gamesPlayed),
-		R.take<PlayerData>(10),
-	);
+		R.take(10),
+	)(players);
 
 	if (top10.length === 0)
 		msg.reply(templateString("top10_no_games"));
@@ -222,33 +237,35 @@ commands.top10 = (msg, args, state) => {
 };
 
 const startReady = async (channel: Discord.TextChannel, state: State): Promise<void> => {
-	state.phase = Phase.ReadyUp;
+	state.phase = "ReadyUp";
 
 	channel.send(templateString("ready_alert"));
 
 	let readyFinished = false;
-	state.readyFinished = () => readyFinished = true;
+	state.readyFinished = () => {
+		readyFinished = true;
+	};
 	await H.delay(1000 * 60);
 	if (readyFinished) return;
 
 	channel.send(templateString("ready_timeout"));
 	state.players = ready(state.players);
-	state.players.forEach((player) => player.state = PlayerState.SignedUp);
-	state.phase = Phase.Gather;
+	state.players.forEach((player) => player.state = "SignedUp");
+	state.phase = "Gather";
 
 	if (config.updateIcon && config.pugChannels[0] === channel.name)
 		channel.guild.setIcon(icons[state.players.length]);
 };
 
 const startPicking = async (channel: Discord.TextChannel, state: State): Promise<void> => {
-	state.phase = Phase.Picking;
+	state.phase = "Picking";
 
 	state.readyFinished();
 	state.readyFinished = () => {};
 
 	for (let i = 1; i <= 2; i += 1) {
-		const captain = state.players.pipe(available, H.pickRandom);
-		captain.state = PlayerState.Captain;
+		const captain = R.pipe(available, H.pickRandom)(state.players);
+		captain.state = "Captain";
 		captain.team = i;
 	}
 
@@ -258,7 +275,9 @@ const startPicking = async (channel: Discord.TextChannel, state: State): Promise
 	state.picksRemaining = 1;
 
 	let picksFinished = false;
-	state.picksFinished = () => picksFinished = true;
+	state.picksFinished = () => {
+		picksFinished = true;
+	};
 	await H.delay(5 * 1000 * 60);
 	if (picksFinished) return;
 	channel.send(templateString("picking_timeout"));
@@ -270,33 +289,33 @@ const startPicking = async (channel: Discord.TextChannel, state: State): Promise
 
 interface Match {
 	when: string;
-	teams: Array<Array<{ id: string, captain: boolean}>>;
+	teams: Array<Array<{ id: string; captain: boolean }>>;
 }
 
 const startGame = (channel: Discord.TextChannel, state: State): void => {
 	channel.send(templateString("lets_go", { map: mapWinner(state.players).map }));
 
-	state.players.pipe(
+	R.pipe(
 		R.map((player: Player) => player.user.id),
 		R.forEach((id) => {
 			const gamesPath = `/${channel.guild.id}/${channel.id}/users/${id}/gamesPlayed`;
 			const gamesPlayed = tryGet(db, gamesPath, 0);
 			db.push(gamesPath, gamesPlayed + 1);
 		}),
-	);
+	)(state.players);
 
 	const match: Match = {
 		when: moment().toJSON(),
-		teams: [1, 2].pipe(
-			R.map((t: number) => state.players.pipe(
+		teams: R.pipe(
+			R.map((t: number): Array<Player> => R.pipe(
 				team(t),
-				R.map((player: Player) => { return { id: player.user.id, captain: player.state === PlayerState.Captain }; }),
-			)),
-		),
+				R.map((player: Player) => { return { id: player.user.id, captain: player.state === "Captain" }; }),
+			)(state.players)),
+		)([1, 2]),
 	};
 
 	const matchesPath = `/${channel.guild.id}/${channel.id}/matches`;
-	const matches = tryGet(db, matchesPath, new Array<Match>());
+	const matches = tryGet(db, matchesPath, ([]: Array<Match>));
 	matches.push(match);
 	db.push(matchesPath, matches);
 
@@ -306,8 +325,8 @@ const startGame = (channel: Discord.TextChannel, state: State): void => {
 		channel.guild.setIcon(icons[state.players.length]);
 };
 
-commands.add = (msg, args, state) => {
-	if (state.phase !== Phase.Gather) return;
+commands.add = (msg, channel, args, state) => {
+	if (state.phase !== "Gather") return;
 
 	if (state.players.find((player) => player.user.id === msg.author.id)) {
 		msg.reply(templateString("already_added"));
@@ -316,16 +335,16 @@ commands.add = (msg, args, state) => {
 	state.players.push(new Player(msg.author));
 	msg.reply(templateString("add_success"));
 
-	if (config.updateIcon && config.pugChannels[0] === (msg.channel as Discord.TextChannel).name)
+	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
 
 	if (state.players.length === config.teamSize * 2)
-		startReady(msg.channel as Discord.TextChannel, state);
+		startReady((channel: Discord.TextChannel), state);
 };
 commands.join = commands.add;
 
-commands.remove = (msg, args, state) => {
-	if (state.phase !== Phase.Gather) return;
+commands.remove = (msg, channel, args, state) => {
+	if (state.phase !== "Gather") return;
 
 	const idx = state.players.findIndex((player) => player.user.id === msg.author.id);
 	if (idx === -1) {
@@ -336,50 +355,52 @@ commands.remove = (msg, args, state) => {
 	state.players.splice(idx, 1);
 	msg.reply(templateString("removed"));
 
-	if (config.updateIcon && config.pugChannels[0] === (msg.channel as Discord.TextChannel).name)
+	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
 };
 
-commands.ready = (msg, args, state) => {
-	if (state.phase !== Phase.ReadyUp) return;
+commands.ready = (msg, channel, args, state) => {
+	if (state.phase !== "ReadyUp") return;
 	const thisPlayer = state.players.find((player) => player.user.id === msg.author.id);
 
 	if (!thisPlayer) {
 		msg.reply(templateString("ready_error_not_playing"));
 		return;
 	}
-	if (thisPlayer.state === PlayerState.Ready) {
+	if (thisPlayer.state === "Ready") {
 		msg.reply(templateString("ready_error_already"));
 		return;
 	}
-	thisPlayer.state = PlayerState.Ready;
+	thisPlayer.state = "Ready";
 	msg.reply(templateString("ready_success"));
 
 	if (ready(state.players).length === config.teamSize * 2)
-		startPicking(msg.channel as Discord.TextChannel, state);
+		startPicking((channel: Discord.TextChannel), state);
 };
 commands.r = commands.ready;
 
-commands.pick = (msg, args, state) => {
-	if (state.phase !== Phase.Picking) return;
-	if (!state.picker) return console.error("Picking phase without a picker");
+commands.pick = (msg, channel, args, state) => {
+	if (state.phase !== "Picking") return;
+	if (!state.picker) throw new Error("Picking phase without a picker");
 	if (msg.author.id !== state.picker.user.id) return;
 	const id = Number(args[0]) - 1;
 	if (isNaN(id)) {
 		msg.reply(templateString("pick_error_NaN"));
 		return;
 	}
-	if (!state.players[id] || state.players[id].state === PlayerState.Captain) {
+	if (!state.players[id] || state.players[id].state === "Captain") {
 		msg.reply(templateString("pick_error_wrong_number"));
 		return;
 	}
-	if (state.players[id].state === PlayerState.Picked) {
+	if (state.players[id].state === "Picked") {
 		msg.reply(templateString("pick_error_already_picked"));
 		return;
 	}
 
 	const picked = state.players[id];
-	picked.state = PlayerState.Picked;
+	picked.state = "Picked";
+	if (!state.picker) throw new Error("NO PICKER WUT");
+
 	picked.team = state.picker.team;
 	state.picksRemaining -= 1;
 
@@ -390,10 +411,11 @@ commands.pick = (msg, args, state) => {
 
 	if (available(state.players).length === 1) {
 		const fatkid = available(state.players)[0];
-		fatkid.state = PlayerState.Picked;
+		fatkid.state = "Picked";
+		if (!state.picker) throw new Error("NO PICKER WUT");
 		fatkid.team = state.picker.team;
 
-		const fatkidPath = `/${msg.guild.id}/${msg.channel.id}/users/${fatkid.user.id}/fatkid`;
+		const fatkidPath = `/${msg.guild.id}/${channel.id}/users/${fatkid.user.id}/fatkid`;
 		const fatkidTimes = tryGet(db, fatkidPath, 0);
 		db.push(fatkidPath, fatkidTimes + 1);
 
@@ -401,7 +423,7 @@ commands.pick = (msg, args, state) => {
 		state.picksFinished = () => {};
 		state.picker = undefined;
 
-		startGame(msg.channel as Discord.TextChannel, state);
+		startGame((channel: Discord.TextChannel), state);
 		return;
 	}
 
@@ -409,11 +431,11 @@ commands.pick = (msg, args, state) => {
 };
 commands.p = commands.pick;
 
-commands.maps = (msg, args, state) => {
+commands.maps = (msg) => {
 	msg.reply(templateString("map_list"));
 };
 
-commands.votemap = (msg, args, state) => {
+commands.votemap = (msg, channel, args, state) => {
 	const idx = state.players.findIndex((player) => player.user.id === msg.author.id);
 	if (idx === -1) {
 		msg.reply(templateString("map_error_not_added"));
@@ -436,38 +458,36 @@ commands.votemap = (msg, args, state) => {
 	msg.reply(templateString("map_vote_success", { map }));
 };
 
-commands.status = (msg, args, state) => {
+commands.status = (msg, channel, args, state) => {
 	switch (state.phase) {
-		case Phase.Gather:
+		case "Gather":
 			if (state.players.length > 0)
 				msg.reply(templateString("status_gather"));
 			else
 				msg.reply(templateString("status_gather_empty"));
 			break;
-		case Phase.ReadyUp:
+		case "ReadyUp":
 			msg.reply(templateString("status_ready"));
 			break;
-		case Phase.Picking:
-			msg.channel.send(templateString("status_picking"));
+		case "Picking":
+			channel.send(templateString("status_picking"));
 			break;
-		default: return console.error("WTF PHASE IS FUCKED UP");
+		default: throw new Error("WTF PHASE IS FUCKED UP");
 	}
 };
 
-commands.help = (msg, args, state) => {
-	msg.reply(templateString("help"));
-};
+commands.help = (msg) => { msg.reply(templateString("help")); return; };
 
-commands.reset = (msg, args, state) => {
+commands.reset = (msg, channel, args, state) => {
 	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 	msg.reply(templateString("reset"));
 	state.reset();
 
-	if (config.updateIcon && config.pugChannels[0] === (msg.channel as Discord.TextChannel).name)
+	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
 };
 
-commands.force = (msg, args, state) => {
+commands.force = (msg, channel, args, state) => {
 	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	const id = mentionToUserID(args[0]);
@@ -479,54 +499,58 @@ commands.force = (msg, args, state) => {
 	msg.member = member;
 	msg.author = member.user;
 	if (commands[args[1]])
-		commands[args[1]](msg, args.slice(2), state);
+		commands[args[1]](msg, channel, args.slice(2), state);
 };
 
-commands.mock = (msg, args, state) => {
-	if (!config.mockUsers) return;
+commands.mock = (msg, channel, args, state) => {
 	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	const id = Number(args[0]);
 
-	const mockMember = msg.guild.member(config.mockUsers[id - 1]) as Discord.GuildMember;
+	if (!config.mockUsers) return;
+	const mockMember = msg.guild.member(config.mockUsers[id - 1]);
+	if (!mockMember) throw new Error();
 	msg.member = mockMember;
 	msg.author = mockMember.user;
 	if (commands[args[1]])
-		commands[args[1]](msg, args.slice(2), state);
+		commands[args[1]](msg, channel, args.slice(2), state);
 };
 commands.m = commands.mock;
 
-commands.mocks = (msg, args, state) => {
+commands.mocks = (msg, channel, args, state) => {
 	if (!config.mockUsers) return;
+	const mockUsers: Array<string> = config.mockUsers;
 	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 
 	if (args[0] === "pick") {
 		while (state.picker) {
 			msg.author = state.picker.user;
-			const randomAvailable = state.players.pipe(available, H.pickRandom);
+			const randomAvailable = R.pipe(available, H.pickRandom)(state.players);
 			args[1] = (state.players.findIndex((player) => player.user.id === randomAvailable.user.id) + 1).toString();
-			commands.pick(msg, args.slice(1), state);
+			commands.pick(msg, channel, args.slice(1), state);
 		}
 		return;
 	}
 
 	if (args[0] === "votemap") {
 		for (let i = 0; i < config.teamSize * 2; i += 1) {
-			const mockMember = msg.guild.member(config.mockUsers[i]) as Discord.GuildMember;
+			const mockMember = msg.guild.member(mockUsers[i]);
+			if (!mockMember) throw new Error();
 			msg.member = mockMember;
 			msg.author = mockMember.user;
 			args[1] = (H.randomIndex(config.maps) + 1).toString();
-			commands.votemap(msg, args.slice(1), state);
+			commands.votemap(msg, channel, args.slice(1), state);
 		}
 		return;
 	}
 
 	for (let i = 0; i < config.teamSize * 2; i += 1) {
-		const mockMember = msg.guild.member(config.mockUsers[i]) as Discord.GuildMember;
+		const mockMember = msg.guild.member(mockUsers[i]);
+		if (!mockMember) throw new Error();
 		msg.member = mockMember;
 		msg.author = mockMember.user;
 		if (commands[args[0]])
-			commands[args[0]](msg, args.slice(1), state);
+			commands[args[0]](msg, channel, args.slice(1), state);
 	}
 };
 commands.ms = commands.mocks;
@@ -549,9 +573,10 @@ client.once("ready", () => {
 		});
 	});
 
-	client.on("message", (msg) => {
+	client.on("message", (msg: Discord.Message) => {
 		if (msg.author.id === client.user.id) return; // don't react to my own messages
-		if (msg.channel.type !== "text") return; // only care about text channels
+		const channel: ?Discord.TextChannel = (msg.channel.type === "text") ? msg.channel : undefined;
+		if (!channel) return; // only care about text channels
 		const state = states[msg.channel.id];
 		if (!state) return; // not a pug channel
 		if (msg.content[0] !== config.commandDelimeter) return; // not a command
@@ -564,19 +589,21 @@ client.once("ready", () => {
 				listNames: (players: Array<Player>): string => players.reduce((acc, player) =>
 					`${acc}${realName(msg.guild, player.user)}, `, "").slice(0, -2),
 				listMentions: (players: Array<Player>): string => players.reduce((acc, player) =>
-					`${acc}${player.user}, `, "").slice(0, -2),
+					`${acc}${player.user.toString()}, `, "").slice(0, -2),
 				ready: () => ready(state.players),
 				unready: () => unready(state.players),
-				isCaptain: (player: Player): boolean => player.state === PlayerState.Captain,
-				captain1: () => captainOf(1)(state.players).user,
-				captain2: () => captainOf(2)(state.players).user,
+				isCaptain: (player: Player): boolean => player.state === "Captain",
+				captain1: () => { const cap = captainOf(1)(state.players); return cap && cap.user; },
+				captain2: () => { const cap = captainOf(2)(state.players); return cap && cap.user; },
 				team1: () => team(1)(state.players),
 				team2: () => team(2)(state.players),
 				mapVotes: () => mapVotes(state.players).filter((e: MapEntry) => e.votes > 0),
 				last: () => {
-					const matches = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/matches`, new Array<Match>());
+					const matches = tryGet(db, `/${msg.guild.id}/${msg.channel.id}/matches`, ([]: Array<Match>));
 					if (matches.length === 0) return templateString("never");
-					return moment(R.last(matches).when).locale(config.locale).fromNow();
+					const last = R.last(matches);
+					if (!last) throw new Error();
+					return moment(last.when).locale(config.locale).fromNow();
 				},
 			};
 
@@ -594,7 +621,7 @@ client.once("ready", () => {
 			return ejs.render(str, { ...config, ...state, ...templateData, ...extraData });
 		};
 
-		if (commands[command]) commands[command](msg, args, state);
+		if (commands[command]) commands[command](msg, channel, args, state);
 	});
 });
 
