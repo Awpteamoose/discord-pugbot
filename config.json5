@@ -35,7 +35,7 @@
 		pug_in_progress: "PUG in progress!",
 		already_added: "you're already added! <%- `${players.length}/${teamSize * 2}` %>",
 		not_added: "you're not added! <%- `${players.length}/${teamSize * 2}` %>",
-		add_success: "added! <%- `${players.length}/${teamSize * 2}` %>",
+		add_success: "added! `<%- commandDelimeter %>maps` to see the map list and `<%- commandDelimeter %>votemap` to pick one! <%- `${players.length}/${teamSize * 2}` %>",
 		removed: "removed! <%- `${players.length}/${teamSize * 2}` %>",
 		ready_error_already: "you've already readied up! <%- `${ready().length}/${teamSize * 2}` %>",
 		ready_error_not_playing: "you're not participating! <%- `${ready().length}/${teamSize * 2}` %>",
@@ -93,6 +93,8 @@
 			<% if (mapVotes().length > 0) { -%>\n\
 				Map votes:\n\
 				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+			<% } else { -%>\n\
+				Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
 			<% } -%>",
 		status_picking: "\
 			It's <%- picker.user %>'s turn, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
@@ -109,6 +111,8 @@
 			<% if (mapVotes().length > 0) { -%>\n\
 				Map votes:\n\
 				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+			<% } else { -%>\n\
+				Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
 			<% } -%>",
 		ready_timeout: "\
 			PUG is cancelled, only <%- `${ready().length}/${teamSize * 2}` %> readied up!\n\

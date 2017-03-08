@@ -128,7 +128,10 @@ class MapEntry {
 	map: string;
 	votes: number;
 	static make = (map: string): MapEntry => {
-		return new MapEntry({ map, votes: 0 });
+		const e = new MapEntry();
+		e.map = map;
+		e.votes = 0;
+		return e;
 	};
 }
 
@@ -427,7 +430,7 @@ commands.pick = (msg, channel, args, state) => {
 		return;
 	}
 
-	msg.reply(templateString("picks_remaining"));
+	channel.send(templateString("picks_remaining"));
 };
 commands.p = commands.pick;
 
