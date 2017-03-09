@@ -175,5 +175,5 @@
 			Once <%= teamSize * 2 %> players are added, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
 			After the drafting phase, the most popular map will be chosen (randomly in case of a tie).",
 	},
-	__version: "2.0.4",
+	__version: "2.0.5",
 }
