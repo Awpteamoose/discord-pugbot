@@ -32,6 +32,56 @@ if (process.argv[2] === "--init") {
 
 if (!process.argv[2] === "--run") process.exit(0);
 
+interface Config {
+	botToken: string;
+	commandDelimeter: string;
+	updateIcon: boolean;
+	teamSize: number;
+	pugChannels: Array<string>;
+	mapVoting: boolean;
+	maps: Array<string>;
+	mockUsers: ?Array<string>;
+	locale: string;
+	strings: { [key: string]: string };
+	version: string;
+}
+
+const config: Config = JSON5.parse(fs.readFileSync("config.json5").toString());
+
+const pckg = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, "utf8"));
+if (pckg.version !== config.version) {
+	let incompatible = false;
+	const defaultConfig: Config = JSON5.parse(fs.readFileSync(`${__dirname}/../config.json5`, "utf8"));
+	const oldConfig: any = {}; // eslint-disable-line
+
+	// Example of schema migration
+	// if (!config.version) {
+	if (false) { // eslint-disable-line
+		incompatible = true;
+		oldConfig.strings = {};
+		oldConfig.strings["add_success"] = config.strings["add_success"];
+		oldConfig.strings["status_gather"] = config.strings["status_gather"];
+		oldConfig.strings["status_picking"] = config.strings["status_picking"];
+
+		config.strings["add_success"] = defaultConfig.strings["add_success"];
+		config.strings["status_gather"] = defaultConfig.strings["status_gather"];
+		config.strings["status_picking"] = defaultConfig.strings["status_picking"];
+
+	}
+
+	if (incompatible) {
+		// $FlowFixMe
+		const res = JSON5.stringify(oldConfig, undefined, "\t").replace(/\\t/g, "\t").replace(/\\n/g, "\\n\\\n");
+		fs.writeFileSync("config.old.json5", res);
+
+		console.log("Your config version doesn't match the package, probably it was created with an older version");
+		console.log("All the incompatible settings were copied to config.old.json5");
+		console.log("Please fix the issues and restart.");
+
+		process.exit(0);
+	}
+}
+
 declare function tryGet<T>(jdb: JsonDB, dataPath: string, fallback: T): T;
 declare function tryGet(jdb: JsonDB, dataPath: string): JSONValue;
 function tryGet<T>(jdb: JsonDB, dataPath: string, fallback?: T): JSONValue | T {
@@ -50,21 +100,6 @@ type TemplateKey = "reset" | "never" | "not_server_member" | "me_print" | "me_no
 	"map_error_NaN" | "map_error_wrong_map" | "map_vote_success" | "status_gather" | "status_gather_empty" |
 	"status_ready" | "status_picking" | "help" | "fatkid_me_never" | "fatkid_me_print" | "fatkid_never" | "fatkid_print" |
 	"top10_no_games" | "top10_print";
-
-interface Config {
-	botToken: string;
-	commandDelimeter: string;
-	updateIcon: boolean;
-	teamSize: number;
-	pugChannels: Array<string>;
-	mapVoting: boolean;
-	maps: Array<string>;
-	mockUsers: ?Array<string>;
-	locale: string;
-	strings: { [key: string]: string };
-}
-
-const config: Config = JSON5.parse(fs.readFileSync("config.json5").toString());
 
 const icons = R.repeat(0, 13).map((_, i) => fs.readFileSync(`assets/${i}.png`)); // 0.png .. 12.png
 
@@ -109,7 +144,7 @@ const mapVotes = (players: Array<Player>): Array<MapEntry> => {
 			const e = acc.find((entry) => entry.map === map);
 			if (e) e.votes += 1;
 			return acc;
-		}, R.pipe(R.map(MapEntry.make))(config.maps)),
+		}, R.pipe(R.map(makeMapEntry))(config.maps)),
 		R.sort((a: MapEntry, b: MapEntry) => b.votes - a.votes)
 	)(players);
 };
@@ -124,54 +159,55 @@ const mapWinner = (players: Array<Player>): MapEntry => R.pipe(
 type Phase = "Gather" | "ReadyUp" | "Picking";
 type PlayerState = "SignedUp" | "Ready" | "Picked" | "Captain";
 
-class MapEntry {
+type MapEntry = {|
 	map: string;
 	votes: number;
-	static make = (map: string): MapEntry => {
-		const e = new MapEntry();
-		e.map = map;
-		e.votes = 0;
-		return e;
-	};
-}
+|};
+const makeMapEntry = (map: string): MapEntry => { return { map, votes: 0 }; };
 
-class Player {
-	state: PlayerState = "SignedUp";
-	team = 0;
-	mapVote = -1;
+type Player = {|
+	state: PlayerState;
+	team: number;
+	mapVote: number;
 	user: Discord.User;
+|};
+const makePlayer = (user: Discord.User): Player => {
+	return {
+		user,
+		state: "SignedUp",
+		team: 0,
+		mapVote: -1,
+	};
+};
 
-	constructor(user: Discord.User) {
-		this.user = user;
-	}
-}
-
-// class MapEntry {
-//     map: string;
-//     votes: number;
-//     static make = (map: string): MapEntry => {
-//         return new MapEntry({ map, votes: 0 });
-//     };
-// }
-class State {
-	phase: Phase = "Gather";
-	players: Array<Player> = [];
+type State = {|
+	phase: Phase;
+	players: Array<Player>;
 	picker: ?Player;
-	picksRemaining = 0;
-	readyFinished: () => void = () => {};
-	picksFinished: () => void = () => {};
-
-	reset(): void {
-		this.readyFinished();
-		this.picksFinished();
-		this.phase = "Gather";
-		this.players = [];
-		this.picker = undefined;
-		this.picksRemaining = 0;
-		this.readyFinished = () => {};
-		this.picksFinished = () => {};
-	}
-}
+	picksRemaining: number;
+	readyFinished: () => void;
+	picksFinished: () => void;
+|};
+const makeState = (): State => {
+	return {
+		phase: "Gather",
+		players: [],
+		picker: undefined,
+		picksRemaining: 0,
+		readyFinished: () => {},
+		picksFinished: () => {},
+	};
+};
+const resetState = (state: State) => {
+	state.readyFinished();
+	state.picksFinished();
+	state.phase = "Gather";
+	state.players = [];
+	state.picker = undefined;
+	state.picksRemaining = 0;
+	state.readyFinished = () => {};
+	state.picksFinished = () => {};
+};
 
 const states: { [key: string]: State } = {};
 type Command = (msg: Discord.Message, channel: Discord.TextChannel, args: Array<string>, state: State) => void;
@@ -284,7 +320,7 @@ const startPicking = async (channel: Discord.TextChannel, state: State): Promise
 	await H.delay(5 * 1000 * 60);
 	if (picksFinished) return;
 	channel.send(templateString("picking_timeout"));
-	state.reset();
+	resetState(state);
 
 	if (config.updateIcon && config.pugChannels[0] === channel.name)
 		channel.guild.setIcon(icons[state.players.length]);
@@ -322,7 +358,7 @@ const startGame = (channel: Discord.TextChannel, state: State): void => {
 	matches.push(match);
 	db.push(matchesPath, matches);
 
-	state.reset();
+	resetState(state);
 
 	if (config.updateIcon && config.pugChannels[0] === channel.name)
 		channel.guild.setIcon(icons[state.players.length]);
@@ -335,7 +371,7 @@ commands.add = (msg, channel, args, state) => {
 		msg.reply(templateString("already_added"));
 		return;
 	}
-	state.players.push(new Player(msg.author));
+	state.players.push(makePlayer(msg.author));
 	msg.reply(templateString("add_success"));
 
 	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
@@ -484,7 +520,7 @@ commands.help = (msg) => { msg.reply(templateString("help")); return; };
 commands.reset = (msg, channel, args, state) => {
 	if (!msg.member.hasPermission("ADMINISTRATOR")) return;
 	msg.reply(templateString("reset"));
-	state.reset();
+	resetState(state);
 
 	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
@@ -572,7 +608,7 @@ client.once("ready", () => {
 		guild.channels.forEach((channel) => {
 			if (channel.type !== "text") return;
 			if (!config.pugChannels.some((name) => name === channel.name)) return;
-			states[channel.id] = new State();
+			states[channel.id] = makeState();
 		});
 	});
 
