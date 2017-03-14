@@ -471,10 +471,12 @@ commands.pick = (msg, channel, args, state) => {
 commands.p = commands.pick;
 
 commands.maps = (msg) => {
+	if (!config.mapVoting) return;
 	msg.reply(templateString("map_list"));
 };
 
 commands.votemap = (msg, channel, args, state) => {
+	if (!config.mapVoting) return;
 	const idx = state.players.findIndex((player) => player.user.id === msg.author.id);
 	if (idx === -1) {
 		msg.reply(templateString("map_error_not_added"));

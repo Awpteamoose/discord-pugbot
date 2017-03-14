@@ -35,7 +35,7 @@
 		pug_in_progress: "PUG in progress!",
 		already_added: "you're already added! <%- `${players.length}/${teamSize * 2}` %>",
 		not_added: "you're not added! <%- `${players.length}/${teamSize * 2}` %>",
-		add_success: "added! `<%- commandDelimeter %>maps` to see the map list and `<%- commandDelimeter %>votemap` to pick one! <%- `${players.length}/${teamSize * 2}` %>",
+		add_success: "added! <% if (!mapVoting) { `${players.length}/${teamSize * 2}` } else { %>`<%- commandDelimeter %>maps` to see the map list and `<%- commandDelimeter %>votemap` to pick one! <%- `${players.length}/${teamSize * 2}` %><% } %>",
 		removed: "removed! <%- `${players.length}/${teamSize * 2}` %>",
 		ready_error_already: "you've already readied up! <%- `${ready().length}/${teamSize * 2}` %>",
 		ready_error_not_playing: "you're not participating! <%- `${ready().length}/${teamSize * 2}` %>",
@@ -89,12 +89,14 @@
 			<%- listNames(players) %>\n\
 			\n\
 			<%- `${players.length}/${teamSize * 2}` %>\n\
-			\n\
-			<% if (mapVotes().length > 0) { -%>\n\
-				Map votes:\n\
-				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
-			<% } else { -%>\n\
-				Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
+			<% if (mapVoting) { -%>\n\
+				\n\
+				<% if (mapVotes().length > 0) { -%>\n\
+					Map votes:\n\
+					<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+				<% } else { -%>\n\
+					Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
+				<% } -%>\n\
 			<% } -%>",
 		status_picking: "\
 			It's <%- picker.user %>'s turn, `<%- commandDelimeter %>pick` <%- picksRemaining %> more:\n\
@@ -107,12 +109,14 @@
 					<%- `:x: ${i + 1}. ~~${player.user}~~ - Team ${player.team} **CAPTAIN**` %>\n\
 				<% } -%>\n\
 			<% }) -%>\n\
-			\n\
-			<% if (mapVotes().length > 0) { -%>\n\
-				Map votes:\n\
-				<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
-			<% } else { -%>\n\
-				Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
+			<% if (mapVoting) { -%>\n\
+				\n\
+				<% if (mapVotes().length > 0) { -%>\n\
+					Map votes:\n\
+					<%- mapVotes().reduce((acc, entry) => `${acc}${entry.votes} - **${entry.map}**, `, \"\").slice(0, -2)%>\n\
+				<% } else { -%>\n\
+					Noone has voted for a map yet! `<%- commandDelimeter %>maps` to see the list and `<%- commandDelimeter %>votemap` to choose one!\n\
+				<% } -%>\n\
 			<% } -%>",
 		ready_timeout: "\
 			PUG is cancelled, only <%- `${ready().length}/${teamSize * 2}` %> readied up!\n\
@@ -155,7 +159,9 @@
 				<%- `${i + 1}. ${player.user}` %>\n\
 			<% }) -%>\n\
 			\n\
-			Map: **<%- map %>**\n\
+			<% if (mapVoting) { -%>\n\
+				Map: **<%- map %>**\n\
+			<% }) -%>\n\
 			LET'S FUCKING GO! WOOOOOO!",
 		help: "\
 			available commands:\n\
@@ -165,8 +171,10 @@
 			`<%- commandDelimeter %>remove` - remove yourself from the PUG queue\n\
 			`<%- commandDelimeter %>ready` - ready yourself up when the queue is full, unready players will be kicked after a minute\n\
 			`<%- commandDelimeter %>pick #` (only captains) - pick the player number # during the drafting phase\n\
-			`<%- commandDelimeter %>maps` - show a list of available maps\n\
-			`<%- commandDelimeter %>votemap <mapname>` - vote for a map called <mapname>\n\
+			<% if (mapVoting) { -%>\n\
+				`<%- commandDelimeter %>maps` - show a list of available maps\n\
+				`<%- commandDelimeter %>votemap <mapname>` - vote for a map called <mapname>\n\
+			<% } -%>\n\
 			`<%- commandDelimeter %>me <info>` - save some info about yourself\n\
 			`<%- commandDelimeter %>who @mention` - display saved info about @mention\n\
 			`<%- commandDelimeter %>fatkid @mention` - display how many times @mention was picked last\n\
