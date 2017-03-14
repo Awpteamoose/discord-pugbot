@@ -332,7 +332,10 @@ interface Match {
 }
 
 const startGame = (channel: Discord.TextChannel, state: State): void => {
-	channel.send(templateString("lets_go", { map: mapWinner(state.players).map }));
+	if (config.mapVoting)
+		channel.send(templateString("lets_go", { map: mapWinner(state.players).map }));
+	else
+		channel.send(templateString("lets_go"));
 
 	R.pipe(
 		R.map((player: Player) => player.user.id),
