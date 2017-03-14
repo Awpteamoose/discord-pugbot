@@ -11,7 +11,7 @@
 		"purple_pug",
 	],
 
-	mapVoting: true,
+	mapVoting: false,
 
 	/* Example:
 	maps: [
