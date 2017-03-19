@@ -31,7 +31,7 @@
 	// between '<%' and '%>' it's actually plain javascript code
 	// https://www.npmjs.com/package/ejs
 	strings: {
-		invite: "invite link: https://discordapp.com/oauth2/authorize?&client_id=<%- clientId %>&scope=bot&permissions=8",
+		invite: "invite link: https://discordapp.com/oauth2/authorize?&client_id=<%- clientId %>&scope=bot&permissions=19456",
 		channels_not_found: "BOT will only work in one of the following channels: <%- pugChannels.join(', ') %>",
 		reset: "PUGBOT reset!",
 		never: "never",
