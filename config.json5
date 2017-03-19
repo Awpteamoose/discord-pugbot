@@ -32,6 +32,7 @@
 	// https://www.npmjs.com/package/ejs
 	strings: {
 		invite: "invite link: https://discordapp.com/oauth2/authorize?&client_id=<%- clientId %>&scope=bot&permissions=8",
+		channels_not_found: "BOT will only work in one of the following channels: <%- pugChannels.join(', ') %>",
 		reset: "PUGBOT reset!",
 		never: "never",
 		not_server_member: "not on server",
@@ -184,7 +185,7 @@
 			`<%- commandDelimeter %>fatkid @mention` - display how many times @mention was picked last\n\
 			`<%- commandDelimeter %>top10` - display 10 most active PUGgers\n\
 			\n\
-			Once <%= teamSize * 2 %> players are added, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
+			Once <%= teamSize * 2 %> players are added<%- customTeamSize ? ' or whatever your custom team size is' : '' %>, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
 			After the drafting phase, the most popular map will be chosen (randomly in case of a tie).",
 	},
 	__version: "2.0.5",

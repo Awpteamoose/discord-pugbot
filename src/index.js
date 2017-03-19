@@ -624,22 +624,28 @@ commands.invite = (msg, channel, args, state) => {
 function addGuild(guild) {
 	if (config.updateIcon) guild.setIcon(icons[0]);
 
-	initStateForGuild(guild);
+	return initStateForGuild(guild);
 }
 
 function initStateForGuild(guild) {
+	var channelsFound = false;
 	guild.channels.forEach((channel) => {
 		if (channel.type !== "text") return;
 		if (!config.pugChannels.some((name) => name === channel.name)) return;
 		states[channel.id] = makeState();
+		channelsFound = true;
 	});
+	return channelsFound;
 }
 
 client.once("ready", () => {
 	console.log("Booting up!");
 
 	client.guilds.forEach((guild) => {
-		addGuild(guild);
+		if(!addGuild(guild)) {
+	    	guild.defaultChannel.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+	    	guild.owner.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+	    }
 	});
 
 	client.on("message", (msg: Discord.Message) => {
@@ -694,7 +700,10 @@ client.on("disconnect", () => {
 });
 
 client.on('guildCreate', function(guild) {
-    addGuild(guild);
+    if(!addGuild(guild)) {
+    	guild.defaultChannel.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+    	guild.owner.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+    }
 });
 
 client.on('channelUpdate', function(channel) {
