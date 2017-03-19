@@ -185,6 +185,7 @@ type State = {|
 	players: Array<Player>;
 	picker: ?Player;
 	picksRemaining: number;
+	teamSize: number;
 	readyFinished: () => void;
 	picksFinished: () => void;
 |};
@@ -374,13 +375,23 @@ commands.add = (msg, channel, args, state) => {
 		msg.reply(templateString("already_added"));
 		return;
 	}
+
+	// Allow custom teamSize
+	if(state.players.length === 0) {
+		state.teamSize = config.customTeamSize ? Number(args[0]) : config.teamSize;
+	}
+
+	if(state.players.length === 0 && isNaN(state.teamSize)) {
+		state.teamSize = config.teamSize;
+	}
+
 	state.players.push(makePlayer(msg.author));
 	msg.reply(templateString("add_success"));
 
 	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
 
-	if (state.players.length === config.teamSize * 2)
+	if (state.players.length === state.teamSize * 2)
 		startReady((channel: Discord.TextChannel), state);
 };
 commands.join = commands.add;
@@ -416,7 +427,7 @@ commands.ready = (msg, channel, args, state) => {
 	thisPlayer.state = "Ready";
 	msg.reply(templateString("ready_success"));
 
-	if (ready(state.players).length === config.teamSize * 2)
+	if (ready(state.players).length === state.teamSize * 2)
 		startPicking((channel: Discord.TextChannel), state);
 };
 commands.r = commands.ready;
@@ -577,7 +588,7 @@ commands.mocks = (msg, channel, args, state) => {
 	}
 
 	if (args[0] === "votemap") {
-		for (let i = 0; i < config.teamSize * 2; i += 1) {
+		for (let i = 0; i < state.teamSize * 2; i += 1) {
 			const mockMember = msg.guild.member(mockUsers[i]);
 			if (!mockMember) throw new Error();
 			msg.member = mockMember;
@@ -588,7 +599,7 @@ commands.mocks = (msg, channel, args, state) => {
 		return;
 	}
 
-	for (let i = 0; i < config.teamSize * 2; i += 1) {
+	for (let i = 0; i < state.teamSize * 2; i += 1) {
 		const mockMember = msg.guild.member(mockUsers[i]);
 		if (!mockMember) throw new Error();
 		msg.member = mockMember;

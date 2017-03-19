@@ -3,6 +3,7 @@
 	commandDelimeter: "!", // only 1 character
 	updateIcon: false, // will change the server icon from zero to teamSize * 2 if true
 	teamSize: 5,
+	customTeamSize: false, // will allow users to specify the teamSize when first adding
 	locale: "en",
 
 	// The bot will have separate state for every channel
@@ -167,7 +168,7 @@
 			available commands:\n\
 			`<%- commandDelimeter %>help` - display this blob\n\
 			`<%- commandDelimeter %>status` - display current PUG status\n\
-			`<%- commandDelimeter %>add` - join the PUG queue\n\
+			`<%- commandDelimeter %>add<%- customTeamSize ? ' [teamSize ' + teamSize + ']' : '' %>` - join the PUG queue or start a PUG queue with the team size of <%- customTeamSize ? '[teamSize ' + teamSize + ']' : teamSize %> specified.\n\
 			`<%- commandDelimeter %>remove` - remove yourself from the PUG queue\n\
 			`<%- commandDelimeter %>ready` - ready yourself up when the queue is full, unready players will be kicked after a minute\n\
 			`<%- commandDelimeter %>pick #` (only captains) - pick the player number # during the drafting phase\n\
