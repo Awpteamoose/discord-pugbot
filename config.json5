@@ -1,5 +1,6 @@
 {
 	botToken: "",
+	clientId: "",
 	commandDelimeter: "!", // only 1 character
 	updateIcon: false, // will change the server icon from zero to teamSize * 2 if true
 	teamSize: 5,
@@ -30,6 +31,7 @@
 	// between '<%' and '%>' it's actually plain javascript code
 	// https://www.npmjs.com/package/ejs
 	strings: {
+		invite: "invite link: https://discordapp.com/oauth2/authorize?&client_id=<%- clientId %>&scope=bot&permissions=8",
 		reset: "PUGBOT reset!",
 		never: "never",
 		not_server_member: "not on server",
@@ -167,6 +169,7 @@
 		help: "\
 			available commands:\n\
 			`<%- commandDelimeter %>help` - display this blob\n\
+			`<%- commandDelimeter %>invite` - if clientId is specified, this will generate a link to invite this bot to your discord.\n\
 			`<%- commandDelimeter %>status` - display current PUG status\n\
 			`<%- commandDelimeter %>add<%- customTeamSize ? ' [teamSize ' + teamSize + ']' : '' %>` - join the PUG queue or start a PUG queue with the team size of <%- customTeamSize ? '[teamSize ' + teamSize + ']' : teamSize %> specified.\n\
 			`<%- commandDelimeter %>remove` - remove yourself from the PUG queue\n\
