@@ -1,0 +1,14 @@
+{
+  "presets" : [
+  	"es2017",
+  	[
+    	"env",
+    	{
+	      	"targets": {
+	        	"node": "current"
+	      	}
+    	}
+  	]
+  ],
+  "plugins": ["transform-class-properties", "transform-object-rest-spread", "transform-flow-strip-types"]
+}
