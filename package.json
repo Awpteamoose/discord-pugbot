@@ -1,6 +1,6 @@
 {
   "name": "discord-pugbot",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Make dem pugs yo.",
   "main": "src/index.js",
   "scripts": {
@@ -29,7 +29,7 @@
     "node-json-db": "0.7.3",
     "ramda": "0.23.0",
     "source-map-support": "0.4.11",
-    "uws": "0.12.0"
+    "uws": "^0.14.1"
   },
   "devDependencies": {
     "babel-cli": "6.23.0",
