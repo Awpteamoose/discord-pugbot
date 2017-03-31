@@ -1,6 +1,6 @@
 {
   "name": "discord-pugbot",
-  "version": "2.0.5",
+  "version": "2.1.2",
   "description": "Make dem pugs yo.",
   "main": "src/index.js",
   "scripts": {

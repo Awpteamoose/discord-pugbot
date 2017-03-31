@@ -15,7 +15,7 @@ type JSONValue = ?string | ?number | ?boolean | ?JSONObject | ?JSONArray;
 type JSONObject = { [key: string]: ?JSONValue };
 type JSONArray = Array<JSONValue>;
 
-const db = new JsonDB("DB", true, true);
+const db = new JsonDB("data/DB", true, true);
 
 if (!process.argv[2]) {
 	console.log("Usage: discord-pugbot [--init | --run]");
@@ -25,6 +25,7 @@ if (!process.argv[2]) {
 if (process.argv[2] === "--init") {
 	fs.writeFileSync("config.json5", fs.readFileSync(`${__dirname}/../config.json5`));
 	if (!fs.existsSync("assets")) fs.mkdirSync("assets");
+	if (!fs.existsSync("data")) fs.mkdirSync("data");
 	for (let i = 0; i <= 12; i += 1)
 		fs.writeFileSync(`assets/${i}.png`, fs.readFileSync(`${__dirname}/../assets/${i}.png`));
 	process.exit(0);
