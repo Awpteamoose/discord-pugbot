@@ -15,7 +15,7 @@ type JSONValue = ?string | ?number | ?boolean | ?JSONObject | ?JSONArray;
 type JSONObject = { [key: string]: ?JSONValue };
 type JSONArray = Array<JSONValue>;
 
-const db = new JsonDB("DB", true, true);
+const db = new JsonDB("data/DB", true, true);
 
 if (!process.argv[2]) {
 	console.log("Usage: discord-pugbot [--init | --run]");
@@ -25,6 +25,7 @@ if (!process.argv[2]) {
 if (process.argv[2] === "--init") {
 	fs.writeFileSync("config.json5", fs.readFileSync(`${__dirname}/../config.json5`));
 	if (!fs.existsSync("assets")) fs.mkdirSync("assets");
+	if (!fs.existsSync("data")) fs.mkdirSync("data");
 	for (let i = 0; i <= 12; i += 1)
 		fs.writeFileSync(`assets/${i}.png`, fs.readFileSync(`${__dirname}/../assets/${i}.png`));
 	process.exit(0);
@@ -185,6 +186,7 @@ type State = {|
 	players: Array<Player>;
 	picker: ?Player;
 	picksRemaining: number;
+	teamSize: number;
 	readyFinished: () => void;
 	picksFinished: () => void;
 |};
@@ -374,13 +376,23 @@ commands.add = (msg, channel, args, state) => {
 		msg.reply(templateString("already_added"));
 		return;
 	}
+
+	// Allow custom teamSize
+	if(state.players.length === 0) {
+		state.teamSize = config.customTeamSize ? Number(args[0]) : config.teamSize;
+	}
+
+	if(state.players.length === 0 && isNaN(state.teamSize)) {
+		state.teamSize = config.teamSize;
+	}
+
 	state.players.push(makePlayer(msg.author));
 	msg.reply(templateString("add_success"));
 
 	if (config.updateIcon && config.pugChannels[0] === (channel: Discord.TextChannel).name)
 		msg.guild.setIcon(icons[state.players.length]);
 
-	if (state.players.length === config.teamSize * 2)
+	if (state.players.length === state.teamSize * 2)
 		startReady((channel: Discord.TextChannel), state);
 };
 commands.join = commands.add;
@@ -416,7 +428,7 @@ commands.ready = (msg, channel, args, state) => {
 	thisPlayer.state = "Ready";
 	msg.reply(templateString("ready_success"));
 
-	if (ready(state.players).length === config.teamSize * 2)
+	if (ready(state.players).length === state.teamSize * 2)
 		startPicking((channel: Discord.TextChannel), state);
 };
 commands.r = commands.ready;
@@ -577,7 +589,7 @@ commands.mocks = (msg, channel, args, state) => {
 	}
 
 	if (args[0] === "votemap") {
-		for (let i = 0; i < config.teamSize * 2; i += 1) {
+		for (let i = 0; i < state.teamSize * 2; i += 1) {
 			const mockMember = msg.guild.member(mockUsers[i]);
 			if (!mockMember) throw new Error();
 			msg.member = mockMember;
@@ -588,7 +600,7 @@ commands.mocks = (msg, channel, args, state) => {
 		return;
 	}
 
-	for (let i = 0; i < config.teamSize * 2; i += 1) {
+	for (let i = 0; i < state.teamSize * 2; i += 1) {
 		const mockMember = msg.guild.member(mockUsers[i]);
 		if (!mockMember) throw new Error();
 		msg.member = mockMember;
@@ -599,22 +611,42 @@ commands.mocks = (msg, channel, args, state) => {
 };
 commands.ms = commands.mocks;
 
+commands.invite = (msg, channel, args, state) => {
+	if(config.clientId) {
+		msg.reply(templateString("invite"));
+	}
+};
+
 // commands.eval = (msg, args, state) => {
 //     if (msg.author.id !== "96338667253006336") return;
 //     try { msg.reply(eval(args.join(" "))); } catch (e) { }; // tslint:disable-line
 // };
 
+function addGuild(guild) {
+	if (config.updateIcon) guild.setIcon(icons[0]);
+
+	return initStateForGuild(guild);
+}
+
+function initStateForGuild(guild) {
+	var channelsFound = false;
+	guild.channels.forEach((channel) => {
+		if (channel.type !== "text") return;
+		if (!config.pugChannels.some((name) => name === channel.name)) return;
+		states[channel.id] = makeState();
+		channelsFound = true;
+	});
+	return channelsFound;
+}
+
 client.once("ready", () => {
 	console.log("Booting up!");
 
 	client.guilds.forEach((guild) => {
-		if (config.updateIcon) guild.setIcon(icons[0]);
-
-		guild.channels.forEach((channel) => {
-			if (channel.type !== "text") return;
-			if (!config.pugChannels.some((name) => name === channel.name)) return;
-			states[channel.id] = makeState();
-		});
+		if(!addGuild(guild)) {
+	    	guild.defaultChannel.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+	    	guild.owner.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+	    }
 	});
 
 	client.on("message", (msg: Discord.Message) => {
@@ -666,6 +698,25 @@ client.on("ready", () => {
 
 client.on("disconnect", () => {
 	console.log("Disconnected!");
+});
+
+client.on('guildCreate', function(guild) {
+    if(!addGuild(guild)) {
+    	guild.defaultChannel.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+    	guild.owner.sendMessage(ejs.render(unindent(config.strings).channels_not_found, { ...config }));
+    }
+});
+
+client.on('channelUpdate', function(channel) {
+	if(channel.guild) {
+    	initStateForGuild(channel.guild);
+    }
+});
+
+client.on('channelCreate', function(channel) {
+	if(channel.guild) {
+    	initStateForGuild(channel.guild);
+    }
 });
 
 client.login(config.botToken);

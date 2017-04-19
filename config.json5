@@ -1,8 +1,10 @@
 {
 	botToken: "",
+	clientId: "",
 	commandDelimeter: "!", // only 1 character
 	updateIcon: false, // will change the server icon from zero to teamSize * 2 if true
 	teamSize: 5,
+	customTeamSize: false, // will allow users to specify the teamSize when first adding
 	locale: "en",
 
 	// The bot will have separate state for every channel
@@ -29,6 +31,8 @@
 	// between '<%' and '%>' it's actually plain javascript code
 	// https://www.npmjs.com/package/ejs
 	strings: {
+		invite: "invite link: https://discordapp.com/oauth2/authorize?&client_id=<%- clientId %>&scope=bot&permissions=19456",
+		channels_not_found: "BOT will only work in one of the following channels: <%- pugChannels.join(', ') %>",
 		reset: "PUGBOT reset!",
 		never: "never",
 		not_server_member: "not on server",
@@ -166,8 +170,9 @@
 		help: "\
 			available commands:\n\
 			`<%- commandDelimeter %>help` - display this blob\n\
+			`<%- commandDelimeter %>invite` - if clientId is specified, this will generate a link to invite this bot to your discord.\n\
 			`<%- commandDelimeter %>status` - display current PUG status\n\
-			`<%- commandDelimeter %>add` - join the PUG queue\n\
+			`<%- commandDelimeter %>add<%- customTeamSize ? ' [teamSize ' + teamSize + ']' : '' %>` - join the PUG queue or start a PUG queue with the team size of <%- customTeamSize ? '[teamSize ' + teamSize + ']' : teamSize %> specified.\n\
 			`<%- commandDelimeter %>remove` - remove yourself from the PUG queue\n\
 			`<%- commandDelimeter %>ready` - ready yourself up when the queue is full, unready players will be kicked after a minute\n\
 			`<%- commandDelimeter %>pick #` (only captains) - pick the player number # during the drafting phase\n\
@@ -180,7 +185,7 @@
 			`<%- commandDelimeter %>fatkid @mention` - display how many times @mention was picked last\n\
 			`<%- commandDelimeter %>top10` - display 10 most active PUGgers\n\
 			\n\
-			Once <%= teamSize * 2 %> players are added, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
+			Once <%= teamSize * 2 %> players are added<%- customTeamSize ? ' or whatever your custom team size is' : '' %>, the bot will ask everyone to `<%- commandDelimeter %>ready`. Then the PUG will start and 2 random players will be chosen as captains.\n\
 			After the drafting phase, the most popular map will be chosen (randomly in case of a tie).",
 	},
 	__version: "2.0.5",
