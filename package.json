@@ -104,6 +104,7 @@
         "always"
       ],
       "flowtype-errors/show-errors": "error",
+      "flowtype/no-types-missing-file-annotation": "off",
       "no-null/no-null": "error",
       "no-console": "off",
       "no-unused-vars": "warn",
