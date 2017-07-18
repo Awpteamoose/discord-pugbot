@@ -1,0 +1,18 @@
+{
+	"plugins": [
+		["module-resolver", {
+			"root": ["./src"]
+		}],
+		"transform-class-properties",
+		"transform-object-rest-spread",
+		"transform-flow-strip-types"
+	],
+	"presets": [
+		"flow",
+		["env", {
+			"targets": {
+				"node": "current"
+			}
+		}]
+	]
+}

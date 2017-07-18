@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import "babel-polyfill";
-require("source-map-support").install();
 
 import * as fs from "fs";
 import * as Discord from "discord.js";
@@ -11,11 +10,7 @@ import * as R from "ramda";
 import moment from "moment";
 import * as H from "awpteamoose/helpers";
 
-type JSONValue = ?string | ?number | ?boolean | ?JSONObject | ?JSONArray;
-type JSONObject = { [key: string]: ?JSONValue };
-type JSONArray = Array<JSONValue>;
-
-const db = new JsonDB("DB", true, true);
+require("source-map-support").install();
 
 if (!process.argv[2]) {
 	console.log("Usage: discord-pugbot [--init | --run]");
@@ -32,66 +27,62 @@ if (process.argv[2] === "--init") {
 
 if (!process.argv[2] === "--run") process.exit(0);
 
-interface Config {
-	botToken: string;
-	commandDelimeter: string;
-	updateIcon: boolean;
-	teamSize: number;
-	pugChannels: Array<string>;
-	mapVoting: boolean;
-	maps: Array<string>;
-	mockUsers: ?Array<string>;
-	locale: string;
-	strings: { [key: string]: string };
-	version: string;
-}
+const db = new JsonDB("DB", true, true);
+const client = new Discord.Client();
+
+type Config = {
+	botToken: string,
+	commandDelimeter: string,
+	updateIcon: boolean,
+	teamSize: number,
+	pugChannels: Array<string>,
+	mapVoting: boolean,
+	maps: Array<string>,
+	mockUsers?: Array<string>,
+	locale: string,
+	strings: { [key: string]: string },
+	version: string,
+};
 
 const config: Config = JSON5.parse(fs.readFileSync("config.json5").toString());
 
-const pckg = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, "utf8"));
-if (pckg.version !== config.version) {
-	let incompatible = false;
-	const defaultConfig: Config = JSON5.parse(fs.readFileSync(`${__dirname}/../config.json5`, "utf8"));
-	const oldConfig: any = {}; // eslint-disable-line
+// const pckg = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, "utf8"));
+// if (pckg.version !== config.version) {
+//     let incompatible = false;
+//     const defaultConfig: Config = JSON5.parse(fs.readFileSync(`${__dirname}/../config.json5`, "utf8"));
+//     const oldConfig: any = {}; // eslint-disable-line
 
-	// Example of schema migration
-	// if (!config.version) {
-	if (false) { // eslint-disable-line
-		incompatible = true;
-		oldConfig.strings = {};
-		oldConfig.strings["add_success"] = config.strings["add_success"];
-		oldConfig.strings["status_gather"] = config.strings["status_gather"];
-		oldConfig.strings["status_picking"] = config.strings["status_picking"];
+//     if (!config.version) {
+//         incompatible = true;
+//         oldConfig.strings = {};
+//         oldConfig.strings["add_success"] = config.strings["add_success"];
+//         oldConfig.strings["status_gather"] = config.strings["status_gather"];
+//         oldConfig.strings["status_picking"] = config.strings["status_picking"];
 
-		config.strings["add_success"] = defaultConfig.strings["add_success"];
-		config.strings["status_gather"] = defaultConfig.strings["status_gather"];
-		config.strings["status_picking"] = defaultConfig.strings["status_picking"];
+//         config.strings["add_success"] = defaultConfig.strings["add_success"];
+//         config.strings["status_gather"] = defaultConfig.strings["status_gather"];
+//         config.strings["status_picking"] = defaultConfig.strings["status_picking"];
+//     }
 
-	}
+//     if (incompatible) {
+//         const res = JSON5.stringify(oldConfig, undefined, "\t").replace(/\\t/g, "\t").replace(/\\n/g, "\\n\\\n");
+//         fs.writeFileSync("config.old.json5", res);
 
-	if (incompatible) {
-		// $FlowFixMe
-		const res = JSON5.stringify(oldConfig, undefined, "\t").replace(/\\t/g, "\t").replace(/\\n/g, "\\n\\\n");
-		fs.writeFileSync("config.old.json5", res);
+//         console.log("Your config version doesn't match the package, probably it was created with an older version");
+//         console.log("All the incompatible settings were copied to config.old.json5");
+//         console.log("Please fix the issues and restart.");
 
-		console.log("Your config version doesn't match the package, probably it was created with an older version");
-		console.log("All the incompatible settings were copied to config.old.json5");
-		console.log("Please fix the issues and restart.");
+//         process.exit(0);
+//     }
+// }
 
-		process.exit(0);
-	}
-}
-
-declare function tryGet<T>(jdb: JsonDB, dataPath: string, fallback: T): T;
-declare function tryGet(jdb: JsonDB, dataPath: string): JSONValue;
-function tryGet<T>(jdb: JsonDB, dataPath: string, fallback?: T): JSONValue | T {
+const tryGet = <T>(jdb: JsonDB, dataPath: string, fallback: T): T => {
 	try {
 		return jdb.getData(dataPath);
 	} catch (e) {
 		return fallback;
 	}
-}
-const client = new Discord.Client();
+};
 
 type TemplateKey = "reset" | "never" | "not_server_member" | "me_print" | "me_no_data" | "me_saved" | "who_print" | "who_no_data" |
 	"ready_alert" | "ready_timeout" | "starting" | "picking_timeout" | "lets_go" | "already_added" | "add_success" | "not_added" |
@@ -160,16 +151,16 @@ type Phase = "Gather" | "ReadyUp" | "Picking";
 type PlayerState = "SignedUp" | "Ready" | "Picked" | "Captain";
 
 type MapEntry = {|
-	map: string;
-	votes: number;
+	map: string,
+	votes: number,
 |};
 const makeMapEntry = (map: string): MapEntry => { return { map, votes: 0 }; };
 
 type Player = {|
-	state: PlayerState;
-	team: number;
-	mapVote: number;
-	user: Discord.User;
+	state: PlayerState,
+	team: number,
+	mapVote: number,
+	user: Discord.User,
 |};
 const makePlayer = (user: Discord.User): Player => {
 	return {
@@ -181,12 +172,12 @@ const makePlayer = (user: Discord.User): Player => {
 };
 
 type State = {|
-	phase: Phase;
-	players: Array<Player>;
-	picker: ?Player;
-	picksRemaining: number;
-	readyFinished: () => void;
-	picksFinished: () => void;
+	phase: Phase,
+	players: Array<Player>,
+	picker: ?Player,
+	picksRemaining: number,
+	readyFinished: () => void,
+	picksFinished: () => void,
 |};
 const makeState = (): State => {
 	return {
@@ -253,11 +244,11 @@ commands.fatkid = (msg, channel, args) => {
 
 commands.top10 = (msg, channel) => {
 	interface PlayerData {
-		name: string;
-		gamesPlayed: number;
+		name: string,
+		gamesPlayed: number,
 	}
 
-	const players = tryGet(db, `/${msg.guild.id}/${channel.id}/users`, ({}: JSONObject));
+	const players = tryGet(db, `/${msg.guild.id}/${channel.id}/users`, {});
 	const top10 = R.pipe(
 		R.keys,
 		R.map((id) => {
@@ -327,8 +318,8 @@ const startPicking = async (channel: Discord.TextChannel, state: State): Promise
 };
 
 interface Match {
-	when: string;
-	teams: Array<Array<{ id: string; captain: boolean }>>;
+	when: string,
+	teams: Array<Array<{ id: string, captain: boolean }>>,
 }
 
 const startGame = (channel: Discord.TextChannel, state: State): void => {
@@ -349,7 +340,7 @@ const startGame = (channel: Discord.TextChannel, state: State): void => {
 	const match: Match = {
 		when: moment().toJSON(),
 		teams: R.pipe(
-			R.map((t: number): Array<Player> => R.pipe(
+			R.map((t: number): Array<{ id: string, captain: boolean }> => R.pipe(
 				team(t),
 				R.map((player: Player) => { return { id: player.user.id, captain: player.state === "Captain" }; }),
 			)(state.players)),

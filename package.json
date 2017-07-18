@@ -1,35 +1,21 @@
 {
   "name": "discord-pugbot",
-  "version": "2.0.7",
   "description": "Make dem pugs yo.",
-  "main": "src/index.js",
-  "scripts": {
-    "flow-types": "node_modules/.bin/flow-typed install",
-    "lint": "node_modules/.bin/eslint \"src/**\"",
-    "compile": "node_modules/.bin/babel src --out-dir lib --source-maps --copy-files"
-  },
-  "files": [
-    "src",
-    "lib",
-    "assets",
-    "config.json5"
-  ],
-  "bin": {
-    "discord-pugbot": "./lib/index.js"
-  },
+  "version": "2.0.8",
   "author": "Awpteamoose",
-  "license": "CC0-1.0",
-  "repository": "https://github.com/Awpteamoose/discord-pugbot",
+  "bin": "./lib/index.js",
   "dependencies": {
+    "babel-plugin-module-resolver": "2.7.1",
     "babel-polyfill": "6.23.0",
     "discord.js": "11.1.0",
     "ejs": "2.5.6",
+    "eslint-plugin-import": "2.7.0",
     "json5": "0.5.1",
     "moment": "2.18.1",
     "node-json-db": "0.7.3",
-    "ramda": "0.23.0",
+    "ramda": "0.24.1",
     "source-map-support": "0.4.15",
-    "uws": "0.14.5"
+    "uws": "8.14.0"
   },
   "devDependencies": {
     "babel-cli": "6.24.1",
@@ -38,134 +24,30 @@
     "babel-plugin-transform-flow-strip-types": "6.22.0",
     "babel-plugin-transform-object-rest-spread": "6.23.0",
     "babel-plugin-transform-runtime": "6.23.0",
-    "babel-preset-env": "1.4.0",
-    "eslint": "3.19.0",
-    "eslint-plugin-flowtype": "2.32.1",
-    "eslint-plugin-flowtype-errors": "3.2.0",
+    "babel-preset-env": "1.6.0",
+    "eslint": "4.2.0",
+    "eslint-plugin-flowtype": "2.35.0",
+    "eslint-plugin-flowtype-errors": "3.3.1",
     "eslint-plugin-no-null": "1.0.2",
-    "eslint-plugin-prefer-arrow": "1.0.4",
-    "flow-bin": "0.45.0",
-    "flow-typed": "2.1.2"
+    "eslint-plugin-prefer-arrow": "1.1.1",
+    "flow-bin": "0.50.0",
+    "flow-typed": "2.1.5"
   },
-  "babel": {
-    "plugins": [
-      "transform-class-properties",
-      "transform-object-rest-spread",
-      "transform-flow-strip-types"
-    ],
-    "presets": [
-      [
-        "env",
-        {
-          "targets": {
-            "node": "current"
-          }
-        }
-      ]
-    ]
-  },
-  "eslintConfig": {
-    "plugins": [
-      "flowtype",
-      "flowtype-errors",
-      "no-null"
-    ],
-    "ecmaVersion": 7,
-    "sourceType": "module",
-    "impliedStrict": true,
-    "ecmaFeatures": {
-      "jsx": true
-    },
-    "parser": "babel-eslint",
-    "env": {
-      "browser": true,
-      "node": true,
-      "es6": true
-    },
-    "root": true,
-    "extends": [
-      "eslint:recommended",
-      "plugin:flowtype/recommended"
-    ],
-    "rules": {
-      "flowtype/no-weak-types": "error",
-      "flowtype/delimiter-dangle": [
-        "error",
-        "always-multiline"
-      ],
-      "flowtype/no-dupe-keys": "error",
-      "flowtype/no-primitive-constructor-types": "error",
-      "flowtype/object-type-delimiter": [
-        "error",
-        "semicolon"
-      ],
-      "flowtype/semi": [
-        "error",
-        "always"
-      ],
-      "flowtype-errors/show-errors": "error",
-      "flowtype/no-types-missing-file-annotation": "off",
-      "no-null/no-null": "error",
-      "no-console": "off",
-      "no-unused-vars": "warn",
-      "no-empty": "off",
-      "no-redeclare": "off",
-      "no-implicit-coercion": "error",
-      "no-invalid-this": "error",
-      "no-self-compare": "error",
-      "no-useless-escape": "error",
-      "require-await": "error",
-      "no-shadow": "error",
-      "no-shadow-restricted-names": "error",
-      "no-undef-init": "error",
-      "eqeqeq": "error",
-      "array-bracket-spacing": [
-        "error",
-        "never"
-      ],
-      "block-spacing": "error",
-      "camelcase": "error",
-      "comma-dangle": [
-        "error",
-        "always-multiline"
-      ],
-      "comma-style": "error",
-      "eol-last": "error",
-      "key-spacing": "error",
-      "max-len": [
-        "error",
-        140
-      ],
-      "new-parens": "error",
-      "no-multiple-empty-lines": "error",
-      "no-plusplus": "error",
-      "no-trailing-spaces": "error",
-      "no-unneeded-ternary": "error",
-      "object-curly-spacing": [
-        "error",
-        "always"
-      ],
-      "operator-assignment": "error",
-      "quotes": [
-        "error",
-        "double",
-        {
-          "avoidEscape": false,
-          "allowTemplateLiterals": true
-        }
-      ],
-      "semi": "error",
-      "semi-spacing": "error",
-      "space-infix-ops": "error",
-      "space-unary-ops": "error",
-      "arrow-parens": "error",
-      "arrow-spacing": "error",
-      "no-var": "error",
-      "prefer-const": "error",
-      "prefer-numeric-literals": "error",
-      "prefer-rest-params": "error",
-      "prefer-spread": "error",
-      "prefer-template": "error"
-    }
+  "files": [
+    "lib",
+    "assets",
+    "config.json5"
+  ],
+  "license": "CC0-1.0",
+  "main": "src/index.js",
+  "repository": "https://github.com/Awpteamoose/discord-pugbot",
+  "scripts": {
+    "build": "npm run lint && npm run compile",
+    "compile": "babel src --out-dir lib --source-maps --copy-files",
+    "flow-typed": "flow-typed install",
+    "lint": "npm run lint:flow && npm run lint:eslint",
+    "lint:eslint": "eslint \"src/**\"",
+    "lint:flow": "flow",
+    "prepublishOnly": "npm run build"
   }
 }

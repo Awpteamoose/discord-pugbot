@@ -1,0 +1,121 @@
+{
+	"plugins": [
+		"flowtype",
+		"no-null",
+		"import"
+	],
+	"parserOptions": {
+		"ecmaVersion": 7,
+		"sourceType": "module",
+		"impliedStrict": true
+	},
+	"parser": "babel-eslint",
+	"env": {
+		"node": true,
+		"es6": true
+	},
+	"root": true,
+	"extends": [
+		"eslint:recommended",
+		"plugin:flowtype/recommended",
+		"plugin:import/errors",
+		"plugin:import/warnings"
+	],
+	"settings": {
+		"flowtype": {
+			"onlyFilesWithFlowAnnotation": false
+		}
+	},
+	"rules": {
+		"flowtype/no-weak-types": "error",
+		"flowtype/delimiter-dangle": [
+			"error",
+			"always-multiline"
+		],
+		"flowtype/no-dupe-keys": "off",
+		"flowtype/generic-spacing": "off",
+		"flowtype/no-primitive-constructor-types": "error",
+		"flowtype/object-type-delimiter": [
+			"error",
+			"comma"
+		],
+		"flowtype/semi": [
+			"error",
+			"always"
+		],
+		"flowtype/no-types-missing-file-annotation": "off",
+
+		"import/no-unresolved": "off",
+		"import/named": "off",
+		"import/no-absolute-path": "error",
+		"import/no-dynamic-require": "error",
+		"import/first": "error",
+
+		"no-null/no-null": "off",
+
+		"no-console": "off",
+		"no-unused-vars": ["warn", { "args": "none" }],
+		"no-empty": "off",
+		"no-redeclare": "off",
+		"no-implicit-coercion": "error",
+		"no-invalid-this": "off",
+		"no-self-compare": "error",
+		"require-await": "error",
+		"no-shadow": "error",
+		"no-shadow-restricted-names": "error",
+		"no-undef": "off",
+		"no-undef-init": "error",
+		"eqeqeq": "error",
+		"block-spacing": "error",
+		"camelcase": "error",
+		"comma-dangle": [
+			"error",
+			"always-multiline"
+		],
+		"comma-style": "error",
+		"eol-last": "error",
+		"key-spacing": "error",
+		"max-len": [
+			"warn",
+			140
+		],
+		"new-parens": "error",
+		"no-multiple-empty-lines": "error",
+		"no-plusplus": "error",
+		"no-trailing-spaces": "error",
+		"no-unneeded-ternary": "error",
+		"padded-blocks": ["error", "never"],
+		"object-curly-spacing": [
+			"error",
+			"always"
+		],
+		"operator-assignment": "error",
+		"quotes": [
+			"error",
+			"double",
+			{
+				"avoidEscape": false,
+				"allowTemplateLiterals": true
+			}
+		],
+		"semi": "error",
+		"semi-spacing": "error",
+		"space-infix-ops": "error",
+		"space-unary-ops": "error",
+		"arrow-parens": "error",
+		"arrow-spacing": "error",
+		"no-var": "error",
+		"prefer-const": "error",
+		"prefer-numeric-literals": "error",
+		"prefer-rest-params": "error",
+		"prefer-spread": "error",
+		"prefer-template": "error",
+		"indent": [
+			"error",
+			"tab",
+			{
+				"SwitchCase": 1
+			}
+		]
+	}
+}

@@ -2,3 +2,4 @@
 /lib/
 /flow-typed/
 npm-debug.log
+package-lock\.json

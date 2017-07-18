@@ -12,8 +12,9 @@ decls/
 
 [options]
 all=true
-emoji=true
 module.use_strict=true
+module.system.node.resolve_dirname=src
+module.system.node.resolve_dirname=node_modules
 
 [version]
-0.41.0
+0.50.0
