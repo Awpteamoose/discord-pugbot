@@ -1,7 +1,7 @@
 {
   "name": "discord-pugbot",
   "description": "Make dem pugs yo.",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "author": "Awpteamoose",
   "bin": "./lib/index.js",
   "dependencies": {
