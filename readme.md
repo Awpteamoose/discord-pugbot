@@ -21,6 +21,6 @@
 8. Copy the bot's `Client ID`
 9. Invite the bot to your server `https://discordapp.com/api/oauth2/authorize?scope=bot&permissions=8&client_id=<Client ID>`
 10. Press `click to reveal` next to `Token` and copy it
-11. Open [config.json5](https://github.com/Awpteamoose/discord-pugbot/blob/master/config.json5) and paste the `Token`
+11. Open [config.js](https://github.com/Awpteamoose/discord-pugbot/blob/master/config.js) and paste the `Token`
 12. Configure the bot to your liking
 13. `discord-pugbot --run`
