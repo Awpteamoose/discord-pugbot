@@ -1,7 +1,7 @@
 {
   "name": "discord-pugbot",
   "description": "Make dem pugs yo.",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "author": "Awpteamoose",
   "bin": "./lib/index.js",
   "dependencies": {
@@ -34,6 +34,7 @@
     "flow-typed": "2.1.5"
   },
   "files": [
+    ".babelrc",
     "src",
     "lib",
     "assets",
