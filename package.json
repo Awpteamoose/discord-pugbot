@@ -1,16 +1,12 @@
 {
   "name": "discord-pugbot",
   "description": "Make dem pugs yo.",
-  "version": "2.0.8",
+  "version": "3.0.0",
   "author": "Awpteamoose",
   "bin": "./lib/index.js",
   "dependencies": {
-    "babel-plugin-module-resolver": "2.7.1",
-    "babel-polyfill": "6.23.0",
+    "babel-core": "6.25.0",
     "discord.js": "11.1.0",
-    "ejs": "2.5.6",
-    "eslint-plugin-import": "2.7.0",
-    "json5": "0.5.1",
     "moment": "2.18.1",
     "node-json-db": "0.7.3",
     "ramda": "0.24.1",
@@ -20,26 +16,30 @@
   "devDependencies": {
     "babel-cli": "6.24.1",
     "babel-eslint": "7.2.3",
+    "babel-plugin-module-resolver": "2.7.1",
     "babel-plugin-transform-class-properties": "6.24.1",
     "babel-plugin-transform-flow-strip-types": "6.22.0",
     "babel-plugin-transform-object-rest-spread": "6.23.0",
     "babel-plugin-transform-runtime": "6.23.0",
+    "babel-polyfill": "6.23.0",
     "babel-preset-env": "1.6.0",
+    "babel-preset-flow": "6.23.0",
     "eslint": "4.2.0",
     "eslint-plugin-flowtype": "2.35.0",
     "eslint-plugin-flowtype-errors": "3.3.1",
+    "eslint-plugin-import": "2.7.0",
     "eslint-plugin-no-null": "1.0.2",
     "eslint-plugin-prefer-arrow": "1.1.1",
     "flow-bin": "0.50.0",
     "flow-typed": "2.1.5"
   },
   "files": [
+    "src",
     "lib",
     "assets",
-    "config.json5"
+    "config.js"
   ],
   "license": "CC0-1.0",
-  "main": "src/index.js",
   "repository": "https://github.com/Awpteamoose/discord-pugbot",
   "scripts": {
     "build": "npm run lint && npm run compile",

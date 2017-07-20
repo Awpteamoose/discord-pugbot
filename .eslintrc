@@ -27,7 +27,7 @@
 		}
 	},
 	"rules": {
-		"flowtype/no-weak-types": "error",
+		"flowtype/no-weak-types": "warn",
 		"flowtype/delimiter-dangle": [
 			"error",
 			"always-multiline"
