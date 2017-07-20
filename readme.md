@@ -4,12 +4,10 @@
 <a href="https://www.npmjs.com/package/discord-pugbot"><img src="https://img.shields.io/npm/dt/discord-pugbot.svg?maxAge=3600" alt="NPM downloads" /></a>
 <a href="https://david-dm.org/hydrabolt/discord-pugbot"><img src="https://david-dm.org/awpteamoose/pugbot.svg?maxAge=3600" alt="Dependencies" /></a>
 
-<a href="https://patreon.com/awpteamoose"><img src="https://s3.amazonaws.com/patreon_public_assets/toolbox/patreon.png" height="20" alt="Support me on Patreon!" /></a>
-
 ### Installation
 0. Install `nodejs` and `npm`
-	* Windows: https://nodejs.org/dist/v7.6.0/node-v7.6.0-x64.msi
-	* Ubuntu: `sudo apt-get install nodejs && sudo apt-get install npm && sudo ln -s "$(which nodejs)" /usr/bin/node`
+	* Windows: https://nodejs.org/dist/v8.2.0/node-v8.2.0-x64.msi
+	* Ubuntu: `curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo ln -s "$(which nodejs)" /usr/bin/node`
 	* Other: you probably know better
 1. Run `npm install -g discord-pugbot --production`
 2. Navigate to a folder where you would like to store configuration for the bot.
