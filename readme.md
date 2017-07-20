@@ -9,7 +9,7 @@
 	* Windows: https://nodejs.org/dist/v8.2.0/node-v8.2.0-x64.msi
 	* Ubuntu: `curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash - && sudo apt-get install -y nodejs && sudo ln -s "$(which nodejs)" /usr/bin/node`
 	* Other: you probably know better
-1. Run `npm install -g discord-pugbot --production`
+1. Run `npm install -g discord-pugbot`
 2. Navigate to a folder where you would like to store configuration for the bot.
 3. Run `discord-pugbot --init`
 4. Go to https://discordapp.com/developers/applications/me/create
